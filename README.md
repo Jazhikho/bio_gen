@@ -1,0 +1,1 @@
+This is a GM tool that will automatically generate a world's worth of species that their players may encounter, by biome, land mass, etc. This tool will be designed to work with my other GM tools, such as PlanetGen and StarGen. While this is currently focused on sci-fi creatures, I may include the ability to generate fantasy creatures in the future.
