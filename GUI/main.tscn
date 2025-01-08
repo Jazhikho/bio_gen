@@ -1,0 +1,110 @@
+[gd_scene format=3 uid="uid://psfidhe1etpf"]
+
+[node name="Main" type="Node2D"]
+
+[node name="GUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuPanel" type="Panel" parent="GUI"]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 200.0
+grow_vertical = 2
+
+[node name="ButtonContainer" type="VBoxContainer" parent="GUI/MenuPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GenerateButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+text = "Generate New"
+
+[node name="EditButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+disabled = true
+text = "Edit Entry"
+
+[node name="SaveButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+disabled = true
+text = "Save Data"
+
+[node name="DeleteButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+disabled = true
+text = "Delete Entry"
+
+[node name="HSeparator" type="HSeparator" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+
+[node name="OptionsButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+text = "Options"
+
+[node name="ContentPanel" type="Panel" parent="GUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="GUI/ContentPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VSplitContainer" type="VSplitContainer" parent="GUI/ContentPanel/MarginContainer"]
+layout_mode = 2
+
+[node name="SpeciesList" type="ItemList" parent="GUI/ContentPanel/MarginContainer/VSplitContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SpeciesDetails" type="RichTextLabel" parent="GUI/ContentPanel/MarginContainer/VSplitContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+
+[node name="GenerationSettingsPopup" type="Window" parent="."]
+title = "Generation Settings"
+initial_position = 2
+size = Vector2i(400, 300)
+visible = false
+unresizable = true
+min_size = Vector2i(400, 300)
+
+[node name="EditPopup" type="Window" parent="."]
+title = "Edit Species"
+initial_position = 2
+size = Vector2i(400, 300)
+visible = false
+unresizable = true
+min_size = Vector2i(400, 300)
+
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
+initial_position = 2
+size = Vector2i(300, 100)
+dialog_text = "Are you sure you want to delete this entry?"
