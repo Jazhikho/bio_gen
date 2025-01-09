@@ -12,35 +12,76 @@ public partial class GenerationSettingsWindow : Window
 
 	public override void _Ready()
 	{
-		// Get references to controls
-		planetTypeOption = GetNode<OptionButton>("MarginContainer/VBoxContainer/PlanetTypeHBox/PlanetTypeOption");
-		temperatureSpinBox = GetNode<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/TemperatureSpinBox");
-		hydrologySpinBox = GetNode<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/HydrologySpinBox");
-		gravitySpinBox = GetNode<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/GravitySpinBox");
-		landMassesSpinBox = GetNode<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/LandMassesSpinBox");
-		chemistryOption = GetNode<OptionButton>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/ChemistryOption");
-
-		// Setup planet types
-		foreach (SettingsManager.PlanetType type in Enum.GetValues(typeof(SettingsManager.PlanetType)))
+		try
 		{
-			planetTypeOption.AddItem(type.ToString());
+			InitializeControls();
+			SetupOptions();
+			ConnectSignals();
+			
+			// Check if SettingsManager.Instance exists before using it
+			if (SettingsManager.Instance != null)
+			{
+				UpdateUIFromSettings(SettingsManager.Instance.CurrentSettings);
+			}
+			else
+			{
+				GD.PrintErr("SettingsManager.Instance is null in GenerationSettingsWindow._Ready()");
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error in GenerationSettingsWindow._Ready(): {e.Message}\n{e.StackTrace}");
+		}
+	}
+
+	private void InitializeControls()
+	{
+		planetTypeOption = GetNodeOrNull<OptionButton>("MarginContainer/VBoxContainer/PlanetTypeHBox/PlanetTypeOption");
+		temperatureSpinBox = GetNodeOrNull<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/TemperatureSpinBox");
+		hydrologySpinBox = GetNodeOrNull<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/HydrologySpinBox");
+		gravitySpinBox = GetNodeOrNull<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/GravitySpinBox");
+		landMassesSpinBox = GetNodeOrNull<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/LandMassesSpinBox");
+		chemistryOption = GetNodeOrNull<OptionButton>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/ChemistryOption");
+
+		// Verify all controls were found
+		if (planetTypeOption == null) GD.PrintErr("planetTypeOption not found");
+		if (temperatureSpinBox == null) GD.PrintErr("temperatureSpinBox not found");
+		if (hydrologySpinBox == null) GD.PrintErr("hydrologySpinBox not found");
+		if (gravitySpinBox == null) GD.PrintErr("gravitySpinBox not found");
+		if (landMassesSpinBox == null) GD.PrintErr("landMassesSpinBox not found");
+		if (chemistryOption == null) GD.PrintErr("chemistryOption not found");
+	}
+
+	private void SetupOptions()
+	{
+		if (planetTypeOption != null)
+		{
+			foreach (SettingsManager.PlanetType type in Enum.GetValues(typeof(SettingsManager.PlanetType)))
+			{
+				planetTypeOption.AddItem(type.ToString());
+			}
 		}
 
-		// Setup chemistry types
-		foreach (SettingsManager.PlanetSettings.ChemistryBasis chemistry in 
-				Enum.GetValues(typeof(SettingsManager.PlanetSettings.ChemistryBasis)))
+		if (chemistryOption != null)
 		{
-			chemistryOption.AddItem(chemistry.ToString());
+			foreach (SettingsManager.PlanetSettings.ChemistryBasis chemistry in 
+					Enum.GetValues(typeof(SettingsManager.PlanetSettings.ChemistryBasis)))
+			{
+				chemistryOption.AddItem(chemistry.ToString());
+			}
 		}
+	}
 
-		// Connect signals
-		GetNode<Button>("MarginContainer/VBoxContainer/ButtonContainer/RandomizeButton").Pressed += OnRandomizePressed;
-		GetNode<Button>("MarginContainer/VBoxContainer/ButtonContainer/GenerateButton").Pressed += OnGeneratePressed;
-		GetNode<Button>("MarginContainer/VBoxContainer/ButtonContainer/CancelButton").Pressed += OnCancelPressed;
-		planetTypeOption.ItemSelected += OnPlanetTypeSelected;
+	private void ConnectSignals()
+	{
+		var randomizeButton = GetNodeOrNull<Button>("MarginContainer/VBoxContainer/ButtonContainer/RandomizeButton");
+		var generateButton = GetNodeOrNull<Button>("MarginContainer/VBoxContainer/ButtonContainer/GenerateButton");
+		var cancelButton = GetNodeOrNull<Button>("MarginContainer/VBoxContainer/ButtonContainer/CancelButton");
 
-		// Set initial values
-		UpdateUIFromSettings(SettingsManager.Instance.CurrentSettings);
+		if (randomizeButton != null) randomizeButton.Pressed += OnRandomizePressed;
+		if (generateButton != null) generateButton.Pressed += OnGeneratePressed;
+		if (cancelButton != null) cancelButton.Pressed += OnCancelPressed;
+		if (planetTypeOption != null) planetTypeOption.ItemSelected += OnPlanetTypeSelected;
 	}
 
 	private void UpdateUIFromSettings(SettingsManager.PlanetSettings settings)

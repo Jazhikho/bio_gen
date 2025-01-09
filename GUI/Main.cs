@@ -14,53 +14,118 @@ public partial class Main : Node2D
 	private ItemList speciesList;
 	private RichTextLabel speciesDetails;
 	private Window generationSettingsWindow;
+	
+	private SettingsManager settingsManager;
+	private GenerationManager generationManager;
+	private HabitatGenerator habitatGenerator;
+	private PhysiologyGenerator physiologyGenerator;
+	private BehaviorGenerator behaviorGenerator;
+	private ReproductionGenerator reproductionGenerator;
+	private NamingGenerator namingGenerator;
 
-	public override void _Ready()
+	 public override void _Ready()
 	{
-		// Get references to UI elements
-		generateButton = GetNode<Button>("GUI/MenuPanel/ButtonContainer/GenerateButton");
-		generateSingleButton = GetNode<Button>("GUI/MenuPanel/ButtonContainer/GenerateSingleButton");
-		editButton = GetNode<Button>("GUI/MenuPanel/ButtonContainer/EditButton");
-		saveButton = GetNode<Button>("GUI/MenuPanel/ButtonContainer/SaveButton");
-		deleteButton = GetNode<Button>("GUI/MenuPanel/ButtonContainer/DeleteButton");
-		optionsButton = GetNode<Button>("GUI/MenuPanel/ButtonContainer/OptionsButton");
-		speciesList = GetNode<ItemList>("GUI/ContentPanel/MarginContainer/VSplitContainer/SpeciesList");
-		speciesDetails = GetNode<RichTextLabel>("GUI/ContentPanel/MarginContainer/VSplitContainer/SpeciesDetails");
+		try
+		{
+			InitializeManagers();
+			InitializeUI();
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error in Main._Ready(): {e.Message}\n{e.StackTrace}");
+		}
+	}
 
-		// Load the generation settings window scene
-		var generationSettingsScene = GD.Load<PackedScene>("res://GUI/SettingsWindow/generation_settings_window.tscn");
-		generationSettingsWindow = generationSettingsScene.Instantiate<Window>();
-		AddChild(generationSettingsWindow);
-		generationSettingsWindow.Hide();
+	private void InitializeManagers()
+	{
+		// Initialize SettingsManager first
+		settingsManager = new SettingsManager();
+		AddChild(settingsManager);
+		
+		// Give it a frame to set up its Instance property
+		CallDeferred(nameof(InitializeOtherManagers));
+	}
 
-		// Connect signals
-		generateButton.Pressed += OnGenerateButtonPressed;
-		generateSingleButton.Pressed += OnGenerateSingleButtonPressed;
-		editButton.Pressed += OnEditButtonPressed;
-		saveButton.Pressed += OnSaveButtonPressed;
-		deleteButton.Pressed += OnDeleteButtonPressed;
-		optionsButton.Pressed += OnOptionsButtonPressed;
-		speciesList.ItemSelected += OnSpeciesSelected;
+	private void InitializeOtherManagers()
+	{
+		if (SettingsManager.Instance == null)
+		{
+			GD.PrintErr("SettingsManager.Instance is still null after initialization!");
+			return;
+		}
 
-		// Ensure the settings and input managers are in the scene
-		EnsureManager<SettingsManager>("SettingsManager");
-		EnsureManager<InputManager>("InputManager");
-		
-		// Configure the content panel
-		var contentPanel = GetNode<Panel>("GUI/ContentPanel");
-		var marginContainer = GetNode<MarginContainer>("GUI/ContentPanel/MarginContainer");
-		var vSplitContainer = GetNode<VSplitContainer>("GUI/ContentPanel/MarginContainer/VSplitContainer");
-		
-		// Configure the species list
-		speciesList = GetNode<ItemList>("GUI/ContentPanel/MarginContainer/VSplitContainer/SpeciesList");
-		speciesList.ItemSelected += OnSpeciesSelected;
-		
-		// Configure the species details
-		speciesDetails = GetNode<RichTextLabel>("GUI/ContentPanel/MarginContainer/VSplitContainer/SpeciesDetails");
-		speciesDetails.BbcodeEnabled = true;
-		
-		// Set the split offset (adjust as needed)
-		vSplitContainer.SplitOffset = 200;
+		generationManager = new GenerationManager();
+		AddChild(generationManager);
+
+		habitatGenerator = new HabitatGenerator();
+		AddChild(habitatGenerator);
+
+		physiologyGenerator = new PhysiologyGenerator();
+		AddChild(physiologyGenerator);
+
+		behaviorGenerator = new BehaviorGenerator();
+		AddChild(behaviorGenerator);
+
+		reproductionGenerator = new ReproductionGenerator();
+		AddChild(reproductionGenerator);
+
+		namingGenerator = new NamingGenerator();
+		AddChild(namingGenerator);
+
+		// Now that all managers are initialized, initialize UI
+		CallDeferred(nameof(InitializeUI));
+	}
+
+	private void InitializeUI()
+	{
+		try
+		{
+			// Disconnect existing signals first
+			if (generateButton != null)
+			{
+				generateButton.Pressed -= OnGenerateButtonPressed;
+			}
+			if (generateSingleButton != null)
+			{
+				generateSingleButton.Pressed -= OnGenerateSingleButtonPressed;
+			}
+			if (speciesList != null)
+			{
+				speciesList.ItemSelected -= OnSpeciesSelected;
+			}
+
+			// Initialize buttons
+			generateButton = GetNodeOrNull<Button>("GUI/MenuPanel/ButtonContainer/GenerateButton");
+			generateSingleButton = GetNodeOrNull<Button>("GUI/MenuPanel/ButtonContainer/GenerateSingleButton");
+			
+			// Initialize content panels
+			speciesList = GetNodeOrNull<ItemList>("GUI/ContentPanel/MarginContainer/VSplitContainer/SpeciesList");
+			speciesDetails = GetNodeOrNull<RichTextLabel>("GUI/ContentPanel/MarginContainer/VSplitContainer/SpeciesDetails");
+
+			// Connect signals if nodes exist
+			if (generateButton != null)
+				generateButton.Pressed += OnGenerateButtonPressed;
+			if (generateSingleButton != null)
+				generateSingleButton.Pressed += OnGenerateSingleButtonPressed;
+			if (speciesList != null)
+				speciesList.ItemSelected += OnSpeciesSelected;
+
+			// Load generation settings window
+			if (generationSettingsWindow == null)
+			{
+				var generationSettingsScene = GD.Load<PackedScene>("res://GUI/SettingsWindow/generation_settings_window.tscn");
+				if (generationSettingsScene != null)
+				{
+					generationSettingsWindow = generationSettingsScene.Instantiate<Window>();
+					AddChild(generationSettingsWindow);
+					generationSettingsWindow.Hide();
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error in InitializeUI: {e.Message}\n{e.StackTrace}");
+		}
 	}
 
 	private void EnsureManager<T>(string nodeName) where T : Node, new()
@@ -80,14 +145,47 @@ public partial class Main : Node2D
 	
 	private void OnGenerateSingleButtonPressed()
 	{
-		var creature = GenerationManager.Instance.GenerateSingleSpecies();
-		AddCreatureToList(creature);
-		DisplayCreatureDetails(creature);
+		try
+		{
+			GD.Print("Generate Single Button Pressed");
+			
+			if (GenerationManager.Instance == null)
+			{
+				GD.PrintErr("GenerationManager.Instance is null!");
+				return;
+			}
+			
+			var creature = GenerationManager.Instance.GenerateSingleSpecies();
+			if (creature == null)
+			{
+				GD.PrintErr("Generated creature is null!");
+				return;
+			}
+			
+			GD.Print($"Generated creature: {creature.Name}");
+			
+			AddCreatureToList(creature);
+			DisplayCreatureDetails(creature);
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error in OnGenerateSingleButtonPressed: {e.Message}\n{e.StackTrace}");
+		}
 	}
 	
 	private void AddCreatureToList(Creature creature)
 	{
-		speciesList.AddItem(creature.Name);
+		if (speciesList == null)
+		{
+			GD.PrintErr("SpeciesList is null!");
+			return;
+		}
+		
+		int previousCount = speciesList.ItemCount;
+		speciesList.AddItem($"{creature.Name} ({creature.Habitat})");
+		int newCount = speciesList.ItemCount;
+		GD.Print($"Added creature to list. Items before: {previousCount}, after: {newCount}");
+		
 		int index = speciesList.ItemCount - 1;
 		
 		// Convert creature to a Godot Dictionary
@@ -151,6 +249,12 @@ public partial class Main : Node2D
 
 	private void DisplayCreatureDetails(Creature creature)
 	{
+		if (speciesDetails == null)
+		{
+			GD.PrintErr("SpeciesDetails is null!");
+			return;
+		}
+		
 		string details = $"[b]{creature.Name}[/b]\n\n";
 		
 		// Basic Information
@@ -202,6 +306,7 @@ public partial class Main : Node2D
 		}
 
 		speciesDetails.Text = details;
+		GD.Print("Updated species details");
 	}
 	
 	private Creature DictionaryToCreature(Godot.Collections.Dictionary dict)

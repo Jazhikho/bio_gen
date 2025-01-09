@@ -70,6 +70,8 @@ public partial class BehaviorGenerator : Node
 
 	private void GenerateSenses(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
+		creature.Senses = "";
+
 		// Determine primary sense
 		int senseRoll = Roll.Dice(3);
 		senseRoll += CalculatePrimarySenseModifiers(creature, habitatInfo);
@@ -138,11 +140,21 @@ public partial class BehaviorGenerator : Node
 
 	private int CalculateHearingModifiers(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
+		if (creature == null)
+		{
+			GD.PrintErr("Creature is null in CalculateHearingModifiers");
+			return 0;
+		}
+
 		int modifier = 0;
 		
 		// Add hearing modifiers based on other senses and conditions
-		if (creature.Senses.Contains("Blind")) modifier += 2;
-		if (creature.Senses.Contains("Bad Sight")) modifier += 1;
+		if (creature.Senses != null)
+		{
+			if (creature.Senses.Contains("Blind")) modifier += 2;
+			if (creature.Senses.Contains("Bad Sight")) modifier += 1;
+		}
+		
 		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) modifier += 1;
 
 		return modifier;

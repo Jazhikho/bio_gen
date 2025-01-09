@@ -392,7 +392,6 @@ namespace BioLibrary
 				{
 					"Covering", new Dictionary<string, int>
 					{
-						{"Skin", 1},
 						{"Skin", 2},
 						{"Scales", 3},
 						{"Fur", 4},
@@ -702,7 +701,6 @@ namespace BioLibrary
 				{
 					"Imagination", new Dictionary<string, int>
 					{
-						{"Imaginative (quirk)", 3},
 						{"Imaginative (quirk)", 2},
 						{"Normal", 0},
 						{"Dull (quirk)", -1},
@@ -713,19 +711,15 @@ namespace BioLibrary
 				{
 					"Suspicion", new Dictionary<string, int>
 					{
-						{"Fearfulness 2", 3},
 						{"Fearfulness 1", 2},
 						{"Careful (quirk)", 1},
 						{"Normal", 0},
 						{"Fearlessness 1", -1},
-						{"Fearlessness 2", -2},
-						{"Fearlessness 3", -3}
 					}
 				},
 				{
 					"Playfulness", new Dictionary<string, int>
 					{
-						{"Compulsive Playfulness (9)", 3},
 						{"Compulsive Playfulness (12)", 2},
 						{"Playful (quirk)", 1},
 						{"Normal", 0},

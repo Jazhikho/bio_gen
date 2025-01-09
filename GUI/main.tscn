@@ -31,7 +31,7 @@ offset_bottom = 414.0
 layout_mode = 2
 text = "New Planetary Fauna"
 
-[node name="GenerateSingleButton2" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+[node name="GenerateSingleButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
 layout_mode = 2
 text = "New Species"
 
@@ -49,6 +49,10 @@ text = "Save Data"
 layout_mode = 2
 disabled = true
 text = "Delete Entry"
+
+[node name="Open File" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+text = "Open File"
 
 [node name="HSeparator" type="HSeparator" parent="GUI/MenuPanel/ButtonContainer"]
 layout_mode = 2

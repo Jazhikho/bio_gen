@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BioStructures;
@@ -29,17 +30,32 @@ public partial class GenerationManager : Node
 
 	public Creature GenerateSingleSpecies(SettingsManager.PlanetSettings settings = null, string specificHabitat = null)
 	{
-		settings ??= GetDefaultSettings();
-		
-		var habitatInfo = HabitatGenerator.Instance.DetermineHabitat(settings, specificHabitat);
-		var creature = new Creature();
-		
-		// Coordinate the generation steps
-		PhysiologyGenerator.Instance.GeneratePhysiology(creature, settings, habitatInfo);
-		BehaviorGenerator.Instance.GenerateBehavior(creature, habitatInfo);
-		NamingGenerator.Instance.NameCreature(creature);
+		try
+		{
+			settings ??= GetDefaultSettings();
+			
+			var habitatInfo = HabitatGenerator.Instance.DetermineHabitat(settings, specificHabitat);
+			var creature = new Creature();
+			
+			GD.Print("Generating physiology...");
+			PhysiologyGenerator.Instance.GeneratePhysiology(creature, settings, habitatInfo);
+			
+			GD.Print("Generating behavior...");
+			BehaviorGenerator.Instance.GenerateBehavior(creature, habitatInfo);
+			
+			GD.Print("Generating reproduction...");
+			ReproductionGenerator.Instance.GenerateReproduction(creature, settings);
+			
+			GD.Print("Naming creature...");
+			NamingGenerator.Instance.NameCreature(creature);
 
-		return creature;
+			return creature;
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error in GenerateSingleSpecies: {e.Message}\n{e.StackTrace}");
+			return null;
+		}
 	}
 
 	public Ecosystem[] GenerateMultipleSpecies(int count, SettingsManager.PlanetSettings settings = null)
@@ -56,6 +72,12 @@ public partial class GenerationManager : Node
 
 	private SettingsManager.PlanetSettings GetDefaultSettings()
 	{
+		if (SettingsManager.Instance == null)
+		{
+			GD.PrintErr("SettingsManager.Instance is null in GetDefaultSettings");
+			return new SettingsManager.PlanetSettings();
+		}
+		
 		var settings = new SettingsManager.PlanetSettings();
 		SettingsManager.Instance.SetPresetSettings(SettingsManager.PlanetType.Gaian);
 		return settings;

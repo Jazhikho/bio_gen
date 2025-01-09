@@ -62,9 +62,11 @@ public partial class SettingsManager : Node
 		if (Instance == null)
 		{
 			Instance = this;
+			GD.Print("SettingsManager Instance set successfully");
 		}
-		else
+		else if (Instance != this)
 		{
+			GD.PrintErr("Multiple SettingsManager instances detected!");
 			QueueFree();
 		}
 	}
