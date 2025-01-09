@@ -1,0 +1,117 @@
+[gd_scene load_steps=2 format=3 uid="uid://cmbnwt4fhrqyj"]
+
+[ext_resource type="Script" path="res://GUI/SettingsWindow/GenerationSettingsWindow.cs" id="1_b5d6v"]
+
+[node name="GenerationSettingsWindow" type="Window"]
+title = "Generation Settings"
+initial_position = 2
+size = Vector2i(400, 500)
+exclusive = true
+script = ExtResource("1_b5d6v")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="PlanetTypeHBox" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/PlanetTypeHBox"]
+layout_mode = 2
+text = "Planet Type:"
+
+[node name="PlanetTypeOption" type="OptionButton" parent="MarginContainer/VBoxContainer/PlanetTypeHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SettingsGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 2
+
+[node name="TemperatureLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+text = "Temperature (K):"
+
+[node name="TemperatureSpinBox" type="SpinBox" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 50.0
+max_value = 150.0
+step = 0.1
+value = 150.0
+
+[node name="HydrologyLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+text = "Hydrology (%):"
+
+[node name="HydrologySpinBox" type="SpinBox" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 120.0
+step = 0.1
+value = 70.0
+
+[node name="GravityLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+text = "Gravity (G):"
+
+[node name="GravitySpinBox" type="SpinBox" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.1
+max_value = 10.0
+step = 0.1
+value = 1.1
+
+[node name="LandMassesLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+text = "Land Masses:"
+
+[node name="LandMassesSpinBox" type="SpinBox" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 8.0
+value = 1.0
+
+[node name="ChemistryLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+text = "Chemistry:"
+
+[node name="ChemistryOption" type="OptionButton" parent="MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ButtonContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="RandomizeButton" type="Button" parent="MarginContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+text = "Randomize"
+
+[node name="GenerateButton" type="Button" parent="MarginContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+text = "Generate"
+
+[node name="CancelButton" type="Button" parent="MarginContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+text = "Cancel"

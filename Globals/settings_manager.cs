@@ -10,6 +10,7 @@ public partial class SettingsManager : Node
 	public class PlanetSettings
 	{
 		// Core parameters
+		public PlanetType PlanetType { get; set; } = PlanetType.Gaian;
 		public float Temperature { get; set; } = 287.0f; // in Kelvin
 		public float Hydrology { get; set; } = 70.0f; // in percentage
 		public float Gravity { get; set; } = 1.0f; // in G's

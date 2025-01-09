@@ -1,37 +1,39 @@
-[gd_scene format=3 uid="uid://psfidhe1etpf"]
+[gd_scene load_steps=3 format=3 uid="uid://psfidhe1etpf"]
+
+[ext_resource type="Script" path="res://GUI/Main.cs" id="1_j1opm"]
+[ext_resource type="PackedScene" uid="uid://cmbnwt4fhrqyj" path="res://GUI/SettingsWindow/generation_settings_window.tscn" id="2_8ecfm"]
 
 [node name="Main" type="Node2D"]
+script = ExtResource("1_j1opm")
 
 [node name="GUI" type="Control" parent="."]
 layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
 grow_vertical = 2
 
 [node name="MenuPanel" type="Panel" parent="GUI"]
 layout_mode = 1
-anchors_preset = 9
-anchor_bottom = 1.0
-offset_right = 200.0
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
 grow_vertical = 2
 
 [node name="ButtonContainer" type="VBoxContainer" parent="GUI/MenuPanel"]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
 offset_left = 10.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = -10.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_top = 200.0
+offset_right = 183.0
+offset_bottom = 414.0
 
 [node name="GenerateButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
 layout_mode = 2
-text = "Generate New"
+text = "New Planetary Fauna"
+
+[node name="GenerateSingleButton2" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+text = "New Species"
 
 [node name="EditButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
 layout_mode = 2
@@ -57,12 +59,10 @@ text = "Options"
 
 [node name="ContentPanel" type="Panel" parent="GUI"]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
 offset_left = 200.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_top = 25.0
+offset_right = 1100.0
+offset_bottom = 625.0
 
 [node name="MarginContainer" type="MarginContainer" parent="GUI/ContentPanel"]
 layout_mode = 1
@@ -71,30 +71,20 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
 
-[node name="VSplitContainer" type="VSplitContainer" parent="GUI/ContentPanel/MarginContainer"]
+[node name="VSplitContainer" type="HSplitContainer" parent="GUI/ContentPanel/MarginContainer"]
 layout_mode = 2
+split_offset = 300
 
 [node name="SpeciesList" type="ItemList" parent="GUI/ContentPanel/MarginContainer/VSplitContainer"]
+custom_minimum_size = Vector2(0, 400)
 layout_mode = 2
-size_flags_vertical = 3
 
 [node name="SpeciesDetails" type="RichTextLabel" parent="GUI/ContentPanel/MarginContainer/VSplitContainer"]
 layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
 
-[node name="GenerationSettingsPopup" type="Window" parent="."]
-title = "Generation Settings"
-initial_position = 2
-size = Vector2i(400, 300)
+[node name="GenerationSettingsWindow" parent="." instance=ExtResource("2_8ecfm")]
 visible = false
-unresizable = true
-min_size = Vector2i(400, 300)
 
 [node name="EditPopup" type="Window" parent="."]
 title = "Edit Species"

@@ -23,7 +23,7 @@ public static class Roll
 		return amount * fudge;
 	}
 
-	public static TKey Seek<TKey, TValue>(Dictionary<TKey, TValue> items, int? roll = null) where TValue : IComparable
+	public static string Seek(Dictionary<string, int> items, int? roll = null)
 	{
 		if (roll == null) roll = Dice();
 
@@ -31,7 +31,7 @@ public static class Roll
 
 		foreach (var item in sortedItems)
 		{
-			if (roll <= Convert.ToInt32(item.Value))
+			if (roll <= item.Value)
 			{
 				return item.Key;
 			}
@@ -40,25 +40,19 @@ public static class Roll
 		return sortedItems.Last().Key;
 	}
 
-	public static TValue Search<TValue>(Dictionary<string, TValue> dictionary, object searchValue = null)
+	public static float Search(Dictionary<float, float> dictionary, float searchValue)
 	{
-		if (searchValue == null) searchValue = Dice();
+		var sortedKeys = dictionary.Keys.OrderBy(k => k).ToList();
 
-		float searchFloat = ConvertToFloat(searchValue);
-		var sortedKeys = dictionary.Keys
-			.Select(k => new { Key = k, FloatKey = ConvertToFloat(k) })
-			.OrderBy(x => x.FloatKey)
-			.ToList();
-
-		foreach (var keyPair in sortedKeys)
+		foreach (float key in sortedKeys)
 		{
-			if (searchFloat <= keyPair.FloatKey)
+			if (searchValue <= key)
 			{
-				return dictionary[keyPair.Key];
+				return dictionary[key];
 			}
 		}
 
-		return dictionary[sortedKeys.Last().Key];
+		return dictionary[sortedKeys.Last()];
 	}
 
 	private static float ConvertToFloat(object value)
