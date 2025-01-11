@@ -190,6 +190,7 @@ public partial class Main : Node2D
 			}
 
 			treeManager.DisplayPlanetData(planet, displayManager);
+			uiManager.saveButton.Disabled = false;
 		}
 		catch (Exception e)
 		{

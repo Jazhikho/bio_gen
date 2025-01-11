@@ -57,26 +57,27 @@ public partial class TreeManager : Node
 			switch (dict["ItemType"].AsString())
 			{
 				case "Creature":
-					GD.Print("Selected Creature Dictionary Contents:");
-					foreach (var key in dict.Keys)
-					{
-						GD.Print($"  {key}: {dict[key]}");
-					}
 					displayManager.DisplayCreatureDetails(DataManager.Instance.DictionaryToCreature(dict));;
-					uiManager.SetButtonStates(true);
+					uiManager.generateSingleButton.Disabled = false;
+					uiManager.editButton.Disabled = false;
+					uiManager.deleteButton.Disabled = false;
 					currentSelectedEcosystem = null;
 					currentSelectedBiomeItem = null;
 					break;
 				case "Biome":
 					displayManager.DisplayBiomeDetails(dict);
-					uiManager.SetButtonStates(false);
+					uiManager.generateSingleButton.Disabled = false;
+					uiManager.editButton.Disabled = false;
+					uiManager.deleteButton.Disabled = true;
 					currentSelectedEcosystem = GetEcosystemFromBiomeItem(selected);
 					currentSelectedBiomeItem = selected;
 					break;
 				case "LandMass":
 				case "WaterBody":
 					displayManager.DisplayDetails(dict);
-					uiManager.SetButtonStates(true);
+					uiManager.generateSingleButton.Disabled = false;
+					uiManager.editButton.Disabled = false;
+					uiManager.deleteButton.Disabled = true;
 					currentSelectedEcosystem = null;
 					currentSelectedBiomeItem = null;
 					break;

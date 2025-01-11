@@ -3,10 +3,10 @@ using Godot;
 public partial class UIManager : Node
 {
 	private Button generateButton;
-	private Button generateSingleButton;
-	private Button editButton;
-	private Button saveButton;
-	private Button deleteButton;
+	public Button generateSingleButton;
+	public Button editButton;
+	public Button saveButton;
+	public Button deleteButton;
 	private Button openFileButton;
 	private Button optionsButton;
 

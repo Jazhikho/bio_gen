@@ -40,15 +40,15 @@ layout_mode = 2
 disabled = true
 text = "Edit Entry"
 
-[node name="SaveButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
-layout_mode = 2
-disabled = true
-text = "Save Data"
-
 [node name="DeleteButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
 layout_mode = 2
 disabled = true
 text = "Delete Entry"
+
+[node name="SaveButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+layout_mode = 2
+disabled = true
+text = "Save Data"
 
 [node name="OpenFileButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
 layout_mode = 2
