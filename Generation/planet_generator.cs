@@ -161,7 +161,7 @@ public partial class PlanetGenerator : Node
 			case SettingsManager.PlanetType.Gaian:
 				baseCount += 1;
 				break;
-			case SettingsManager.PlanetType.Panthalassic:
+			case SettingsManager.PlanetType.Hydaean:
 				baseCount = isLandMass ? Math.Max(1, baseCount - 1) : baseCount + 1;
 				break;
 			case SettingsManager.PlanetType.Arid:
@@ -339,6 +339,7 @@ public partial class PlanetGenerator : Node
 			["SizeCategory"] = creature.SizeCategory,
 			["SpecificSize"] = creature.SpecificSize,
 			["GravitySizeMultiplier"] = creature.GravitySizeMultiplier,
+			["WeightInPounds"] = creature.WeightInPounds,
 			["Symmetry"] = creature.Symmetry,
 			["LimbStructure"] = creature.LimbStructure,
 			["ActualLimbCount"] = creature.ActualLimbCount,

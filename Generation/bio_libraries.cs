@@ -29,9 +29,9 @@ namespace BioLibrary
 				{
 					"Land", new Dictionary<string, int>
 					{
-						{"Plain", 7},
+						{"Plain", 6},
 						{"Desert", 8},
-						{"Beach", 9},
+						{"Coastal", 9},
 						{"Woodland", 10},
 						{"Swampland", 11},
 						{"Mountain", 12},
@@ -42,7 +42,7 @@ namespace BioLibrary
 				{
 					"Water", new Dictionary<string, int>
 					{
-						{"Banks", 7},
+						{"Shallows", 7},
 						{"Ocean", 8},
 						{"Lake", 9},
 						{"River", 10},
@@ -128,7 +128,7 @@ namespace BioLibrary
 					}
 				},
 				{
-					"Banks", new Dictionary<string, int>
+					"Shallows", new Dictionary<string, int>
 					{
 						{"immobile", 3},
 						{"floating", 4},
@@ -166,7 +166,7 @@ namespace BioLibrary
 					}
 				},
 				{
-					"Beach", new Dictionary<string, int>
+					"Coastal", new Dictionary<string, int>
 					{
 						{"immobile", 2},
 						{"slithering", 4},
@@ -304,22 +304,22 @@ namespace BioLibrary
 		{
 			var gravitySizeMultiplier = new Dictionary<float, float>
 			{
-				{4.6f, 0.1f},   // Multiplier, gravity
-				{2.9f, 0.2f},
-				{2.2f, 0.3f},
-				{1.8f, 0.4f},
-				{1.6f, 0.5f},
-				{1.4f, 0.6f},
-				{1.3f, 0.7f},
-				{1.2f, 0.8f},
-				{1.1f, 0.9f},
+				{0.1f, 4.6f},   // Gravity, multiplier
+				{0.2f, 2.9f},
+				{0.3f, 2.2f},
+				{0.4f, 1.8f},
+				{0.5f, 1.6f},
+				{0.6f, 1.4f},
+				{0.7f, 1.3f},
+				{0.8f, 1.2f},
+				{0.9f, 1.1f},
 				{1.0f, 1.0f},
-				{0.9f, 1.25f},
-				{0.75f, 1.5f},
-				{0.6f, 2.0f},
-				{0.5f, 2.5f},
-				{0.4f, 3.5f},
-				{0.3f, 5f}
+				{1.25f, 0.9f},
+				{1.5f, 0.75f},
+				{2.0f, 0.6f},
+				{2.5f, 0.5f},
+				{3.5f, 0.4f},
+				{5.0f, 0.3f}
 			};
 			return gravitySizeMultiplier;
 		}

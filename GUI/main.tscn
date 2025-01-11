@@ -92,14 +92,14 @@ bbcode_enabled = true
 visible = false
 
 [node name="EditPopup" type="Window" parent="."]
-title = "Edit Species"
+title = "Edit Entry"
 initial_position = 2
-size = Vector2i(400, 300)
+size = Vector2i(400, 600)
 visible = false
-unresizable = true
+wrap_controls = true
 min_size = Vector2i(400, 300)
 
 [node name="ConfirmationDialog" type="ConfirmationDialog" parent="."]
 initial_position = 2
-size = Vector2i(300, 100)
+size = Vector2i(348, 500)
 dialog_text = "Are you sure you want to delete this entry?"

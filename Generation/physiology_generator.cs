@@ -322,7 +322,7 @@ public partial class PhysiologyGenerator : Node
 		int breathingRoll = Roll.Dice(2, 6);
 		
 		// Apply modifiers
-		if (new[] {"Arctic", "Swampland", "River", "Beach", "Lagoon"}.Contains(habitatInfo.habitat)) breathingRoll += 1;
+		if (new[] {"Arctic", "Swampland", "River", "Coastal", "Lagoon"}.Contains(habitatInfo.habitat)) breathingRoll += 1;
 		if (creature.Locomotion == "walking") breathingRoll += 1;
 		if (new[] {"winged flight", "climbing"}.Contains(creature.Locomotion)) breathingRoll += 2;
 		

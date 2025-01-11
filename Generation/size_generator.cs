@@ -33,7 +33,7 @@ public partial class SizeGenerator : Node
 		try
 		{
 			// Roll 1d6 for basic size category
-			int sizeRoll = Roll.Dice(1, 6);
+			int sizeRoll = Roll.Dice(1);
 			
 			// Apply gravity modifiers
 			if (settings.Gravity <= 0.4f) sizeRoll += 2;
@@ -43,10 +43,10 @@ public partial class SizeGenerator : Node
 			
 			// Apply habitat modifiers
 			if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) sizeRoll += 1;
-			if (habitatInfo.habitat == "Ocean" || habitatInfo.habitat == "Banks") sizeRoll += 1;
+			if (habitatInfo.habitat == "Ocean" || habitatInfo.habitat == "Shallows") sizeRoll += 1;
 			if (habitatInfo.habitat == "Lagoon" || habitatInfo.habitat == "River") sizeRoll -= 1;
 			if (habitatInfo.habitat == "Plain") sizeRoll += 1;
-			if (habitatInfo.habitat == "Beach" || habitatInfo.habitat == "Desert" || habitatInfo.habitat == "Mountain") sizeRoll -= 1;
+			if (habitatInfo.habitat == "Coastal" || habitatInfo.habitat == "Desert" || habitatInfo.habitat == "Mountain") sizeRoll -= 1;
 			
 			// Apply trophic level modifiers
 			if (creature.TrophicLevel == "Grazing Herbivore") sizeRoll += 1;
@@ -61,16 +61,14 @@ public partial class SizeGenerator : Node
 			
 			// Determine specific size from table
 			var sizesInCategory = BioData.SizeCategory()[creature.SizeCategory];
-			creature.SpecificSize = Roll.Seek(sizesInCategory);
+			creature.SpecificSize = Roll.Vary(Roll.Seek(sizesInCategory));
 			
 			// Apply gravity size multiplier
-			creature.GravitySizeMultiplier = BioData.GravitySizeMultiplier()
-				.Where(x => x.Value <= settings.Gravity)
-				.OrderByDescending(x => x.Value)
-				.FirstOrDefault().Key;
+			var GravitySizeMulti = BioData.GravitySizeMultiplier();
+			creature.GravitySizeMultiplier = Roll.Search(GravitySizeMulti, settings.Gravity);
 			
 			// Calculate final size and weight
-			float finalSize = creature.SpecificSize * creature.GravitySizeMultiplier;
+			float finalSize = creature.SpecificSize * creature.GravitySizeMultiplier * 3;
 			float baseWeight = (float)(Math.Pow(finalSize / 2, 3) * 200);
 			
 			// Adjust weight based on chemical basis
@@ -78,6 +76,7 @@ public partial class SizeGenerator : Node
 			if (creature.ChemicalBasis == "Hydrogen-Based") baseWeight /= 10;
 			
 			// Final weight adjusted for local gravity
+			creature.SpecificSize = finalSize;
 			creature.WeightInPounds = baseWeight * settings.Gravity;
 		}
 		catch (Exception e)

@@ -55,7 +55,7 @@ namespace BioStructures
 		public string AnimalIntelligence { get; set; }
 		public string MatingBehavior { get; set; }
 		public string SocialOrganization { get; set; }
-		public Dictionary<string, int> MentalTraits { get; set; } = new Dictionary<string, int>();
+		public Dictionary<string, string> MentalTraits { get; set; } = new Dictionary<string, string>();
 	}
 
 	[Serializable]

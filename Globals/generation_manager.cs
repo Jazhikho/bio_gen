@@ -56,28 +56,13 @@ public partial class GenerationManager : Node
 			// Set chemical basis first
 			creature.ChemicalBasis = settings.PrimaryChemistry.ToString().Replace("Based", "-Based");
 
-			GD.Print("Generating trophic level...");
 			TrophicGenerator.Instance.GenerateTrophicLevel(creature, settings, habitatInfo);
-
-			GD.Print("Generating locomotion...");
 			LocomotionGenerator.Instance.GenerateLocomotion(creature, settings, habitatInfo);
-
-			GD.Print("Generating size...");
 			SizeGenerator.Instance.GenerateSize(creature, settings, habitatInfo);
-
-			GD.Print("Generating physiology...");
 			PhysiologyGenerator.Instance.GeneratePhysiology(creature, settings, habitatInfo);
-			
-			GD.Print("Generating reproduction...");
 			ReproductionGenerator.Instance.GenerateReproduction(creature, settings);
-
-			GD.Print("Generating senses...");
 			SensesGenerator.Instance.GenerateSenses(creature, settings, habitatInfo);
-			
-			GD.Print("Generating behavior...");
 			BehaviorGenerator.Instance.GenerateBehavior(creature, settings, habitatInfo);
-			
-			GD.Print("Naming creature...");
 			NamingGenerator.Instance.NameCreature(creature);
 
 			return creature;
@@ -98,7 +83,6 @@ public partial class GenerationManager : Node
 		}
 		
 		var settings = new SettingsManager.PlanetSettings();
-		SettingsManager.Instance.SetPresetSettings(SettingsManager.PlanetType.Gaian);
 		return settings;
 	}
 }

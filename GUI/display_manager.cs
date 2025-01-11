@@ -3,8 +3,16 @@ using BioStructures;
 
 public partial class DisplayManager : Node
 {
+	public static DisplayManager Instance { get; private set; }
+	
 	private RichTextLabel speciesDetails;
 
+	public override void _EnterTree()
+	{
+		if (Instance == null) Instance = this;
+		else QueueFree();
+	}
+	
 	public void Initialize(RichTextLabel details)
 	{
 		speciesDetails = details;
@@ -35,7 +43,9 @@ public partial class DisplayManager : Node
 		details += $"Chemical Basis: {creature.ChemicalBasis}\n";
 		details += $"Habitat: {creature.Habitat}\n";
 		details += $"Trophic Level: {creature.TrophicLevel}\n";
-		details += $"Size: {creature.SizeCategory} ({creature.SpecificSize:F2} meters, x{creature.GravitySizeMultiplier:F2} gravity modifier)\n\n";
+		details += $"Height: {creature.SizeCategory} ({creature.SpecificSize:F2} feet)\n";
+		details += $"Weight: {creature.WeightInPounds:F4} lbs\n\n";
+		GD.Print($"Weight in DisplayManager: {creature.WeightInPounds}");
 		
 		details += "[u]Physical Characteristics[/u]\n";
 		details += $"Symmetry: {creature.Symmetry}\n";

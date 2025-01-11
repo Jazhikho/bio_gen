@@ -29,6 +29,5 @@ public partial class UIManager : Node
 	editButton.Disabled = !enabled;
 	saveButton.Disabled = !enabled;
 	deleteButton.Disabled = !enabled;
-	// openFileButton and optionsButton can be always enabled
 }
 }

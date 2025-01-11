@@ -21,10 +21,10 @@ public partial class SettingsManager : Node
 		// Chemistry
 		public enum ChemistryBasis
 		{
+			CarbonBased,
 			HydrogenBased,
 			AmmoniaBased,
 			HydrocarbonBased,
-			CarbonBased,
 			ChlorineBased,
 			SiliconBased,
 			SulfurBased,
@@ -189,23 +189,38 @@ public partial class SettingsManager : Node
 	// Preset settings for different planet types
 	public enum PlanetType
 	{
+		Gaian,
 		Jovian,
-		Arean,
+		Xerocyclic,
 		Arid,
 		Oceanic,
-		Panthalassic,
-		Promethean,
+		Hydaean,
+		Tectalithic,
 		Snowball,
-		Gaian,
-		Vesperian
+		Thermalyte
 	}
 
 	public void SetPresetSettings(PlanetType planetType)
 	{
 		switch (planetType)
 		{
+			case PlanetType.Gaian:
+				currentSettings.Temperature = 287.0f;
+				currentSettings.Hydrology = 70.0f;
+				currentSettings.Gravity = 1.0f;
+				currentSettings.LandMasses = 5;
+				currentSettings.PrimaryChemistry = PlanetSettings.ChemistryBasis.CarbonBased;
+				currentSettings.AtmosphericPressure = 1.0f;
+				currentSettings.DayLength = 24.0f;
+				currentSettings.YearLength = 365.0f;
+				currentSettings.HasMagneticField = true;
+				currentSettings.OrbitalTilt = 23.5f;
+				currentSettings.RadiationLevel = 1.0f;
+				currentSettings.HasSeasonalCycles = true;
+				currentSettings.TectonicActivity = 1.0f;
+				break;
 			case PlanetType.Jovian:
-				currentSettings.Temperature = 150.0f;
+				currentSettings.Temperature = 110.0f;
 				currentSettings.Hydrology = 0.0f;
 				currentSettings.Gravity = 2.5f;
 				currentSettings.LandMasses = 0;
@@ -219,11 +234,11 @@ public partial class SettingsManager : Node
 				currentSettings.HasSeasonalCycles = false;
 				currentSettings.TectonicActivity = 0.0f;
 				break;
-			case PlanetType.Arean:
-				currentSettings.Temperature = 250.0f;
-				currentSettings.Hydrology = 5.0f;
+			case PlanetType.Xerocyclic:
+				currentSettings.Temperature = 295.0f;
+				currentSettings.Hydrology = 4.0f;
 				currentSettings.Gravity = 0.4f;
-				currentSettings.LandMasses = 3;
+				currentSettings.LandMasses = 2;
 				currentSettings.PrimaryChemistry = PlanetSettings.ChemistryBasis.CarbonBased;
 				currentSettings.AtmosphericPressure = 0.6f;
 				currentSettings.DayLength = 24.6f;
@@ -238,7 +253,7 @@ public partial class SettingsManager : Node
 				currentSettings.Temperature = 310.0f;
 				currentSettings.Hydrology = 10.0f;
 				currentSettings.Gravity = 1.0f;
-				currentSettings.LandMasses = 2;
+				currentSettings.LandMasses = 1;
 				currentSettings.PrimaryChemistry = PlanetSettings.ChemistryBasis.CarbonBased;
 				currentSettings.AtmosphericPressure = 0.8f;
 				currentSettings.DayLength = 30.0f;
@@ -264,8 +279,8 @@ public partial class SettingsManager : Node
 				currentSettings.HasSeasonalCycles = true;
 				currentSettings.TectonicActivity = 1.0f;
 				break;
-			case PlanetType.Panthalassic:
-				currentSettings.Temperature = 280.0f;
+			case PlanetType.Hydaean:
+				currentSettings.Temperature = 175.0f;
 				currentSettings.Hydrology = 100.0f;
 				currentSettings.Gravity = 1.5f;
 				currentSettings.LandMasses = 0;
@@ -279,12 +294,12 @@ public partial class SettingsManager : Node
 				currentSettings.HasSeasonalCycles = false;
 				currentSettings.TectonicActivity = 0.2f;
 				break;
-			case PlanetType.Promethean:
-				currentSettings.Temperature = 250.0f;
-				currentSettings.Hydrology = 20.0f;
+			case PlanetType.Tectalithic:
+				currentSettings.Temperature = 290.0f;
+				currentSettings.Hydrology = 50.0f;
 				currentSettings.Gravity = 0.8f;
-				currentSettings.LandMasses = 1;
-				currentSettings.PrimaryChemistry = PlanetSettings.ChemistryBasis.SiliconBased;
+				currentSettings.LandMasses = 4;
+				currentSettings.PrimaryChemistry = PlanetSettings.ChemistryBasis.CarbonBased;
 				currentSettings.AtmosphericPressure = 0.9f;
 				currentSettings.DayLength = 30.0f;
 				currentSettings.YearLength = 400.0f;
@@ -295,8 +310,8 @@ public partial class SettingsManager : Node
 				currentSettings.TectonicActivity = 1.5f;
 				break;
 			case PlanetType.Snowball:
-				currentSettings.Temperature = 200.0f;
-				currentSettings.Hydrology = 50.0f;
+				currentSettings.Temperature = 155.0f;
+				currentSettings.Hydrology = 0.0f;
 				currentSettings.Gravity = 1.0f;
 				currentSettings.LandMasses = 1;
 				currentSettings.PrimaryChemistry = PlanetSettings.ChemistryBasis.CarbonBased;
@@ -309,26 +324,11 @@ public partial class SettingsManager : Node
 				currentSettings.HasSeasonalCycles = true;
 				currentSettings.TectonicActivity = 1.0f;
 				break;
-			case PlanetType.Gaian:
-				currentSettings.Temperature = 287.0f;
-				currentSettings.Hydrology = 70.0f;
-				currentSettings.Gravity = 1.0f;
-				currentSettings.LandMasses = 1;
-				currentSettings.PrimaryChemistry = PlanetSettings.ChemistryBasis.CarbonBased;
-				currentSettings.AtmosphericPressure = 1.0f;
-				currentSettings.DayLength = 24.0f;
-				currentSettings.YearLength = 365.0f;
-				currentSettings.HasMagneticField = true;
-				currentSettings.OrbitalTilt = 23.5f;
-				currentSettings.RadiationLevel = 1.0f;
-				currentSettings.HasSeasonalCycles = true;
-				currentSettings.TectonicActivity = 1.0f;
-				break;
-			case PlanetType.Vesperian:
+			case PlanetType.Thermalyte:
 				currentSettings.Temperature = 300.0f;
 				currentSettings.Hydrology = 50.0f;
 				currentSettings.Gravity = 1.0f;
-				currentSettings.LandMasses = 1;
+				currentSettings.LandMasses = 3;
 				currentSettings.PrimaryChemistry = PlanetSettings.ChemistryBasis.CarbonBased;
 				currentSettings.AtmosphericPressure = 1.0f;
 				currentSettings.DayLength = 100.0f;

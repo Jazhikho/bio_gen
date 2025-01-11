@@ -111,7 +111,7 @@ public partial class HabitatGenerator : Node
 		{
 			case "arctic": return settings.Temperature < 273;
 			case "desert": return settings.Temperature > 300 && settings.Hydrology < 20;
-			case "beach": return settings.Hydrology > 0 && settings.Hydrology < 100;
+			case "coastal": return settings.Hydrology > 0 && settings.Hydrology < 100;
 			case "woodland": return settings.Temperature is >= 278 and <= 298 && 
 								  settings.Hydrology is >= 30 and <= 80;
 			case "swampland": return settings.Temperature > 283 && settings.Hydrology > 60;

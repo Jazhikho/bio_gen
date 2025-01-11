@@ -12,6 +12,7 @@ public partial class Main : Node2D
 	private SaveLoadManager saveLoadManager;
 	private FileDialogManager fileDialogManager;
 	private OptionsManager optionsManager;
+	private EditManager editManager;
 
 	// Other managers (already existing)
 	private SettingsManager settingsManager;
@@ -64,7 +65,8 @@ public partial class Main : Node2D
 		saveLoadManager = new SaveLoadManager();
 		fileDialogManager = new FileDialogManager();
 		optionsManager = new OptionsManager();
-
+		editManager = new EditManager();
+		AddChild(editManager);
 		AddChild(settingsManager);
 		AddChild(dataManager);
 		AddChild(uiManager);
@@ -132,6 +134,18 @@ public partial class Main : Node2D
 
 		editPopup = GetNode<Window>("EditPopup");
 		confirmationDialog = GetNode<ConfirmationDialog>("ConfirmationDialog");
+		
+		var saveDialog = new FileDialog();
+		saveDialog.Name = "SaveDialog";
+		saveDialog.FileMode = FileDialog.FileModeEnum.SaveFile;
+		saveDialog.Size = new Vector2I(400, 600);
+		AddChild(saveDialog);
+		
+		var openDialog = new FileDialog();
+		openDialog.Name = "OpenDialog";
+		openDialog.FileMode = FileDialog.FileModeEnum.OpenFile;
+		openDialog.Size = new Vector2I(400, 600);
+		AddChild(openDialog);
 
 			// Pass UI references to managers
 			uiManager.Initialize(generateButton, generateSingleButton, editButton, saveButton, deleteButton, openFileButton, optionsButton);
@@ -139,6 +153,7 @@ public partial class Main : Node2D
 			treeManager.Initialize(ecosystemTree);
 			fileDialogManager.Initialize(GetNode<FileDialog>("SaveDialog"), GetNode<FileDialog>("OpenDialog"));
 			optionsManager.Initialize(GetNode<Window>("OptionsWindow"));
+			editManager.Initialize(editPopup, treeManager, displayManager);
 
 			// Connect signals
 			ConnectSignals();
@@ -215,12 +230,6 @@ public partial class Main : Node2D
 				SettingsManager.Instance.CurrentSettings, 
 				selectedEcosystem);
 
-			if (creature == null)
-			{
-				GD.PrintErr("Generated creature is null!");
-				return;
-			}
-
 			treeManager.AddCreatureToTree(creature, selectedBiomeItem);
 			displayManager.DisplayCreatureDetails(creature);
 			treeManager.UpdateParentCounts(selectedBiomeItem);
@@ -233,7 +242,11 @@ public partial class Main : Node2D
 
 	private void OnEditButtonPressed()
 	{
-		editPopup.Show();
+		var selectedItem = ecosystemTree.GetSelected();
+		if (selectedItem != null)
+		{
+			editManager.ShowEditWindow(selectedItem);
+		}
 	}
 
 	private void OnSaveButtonPressed()

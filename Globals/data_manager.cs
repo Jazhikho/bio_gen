@@ -28,7 +28,7 @@ public partial class DataManager : Node
 		}
 	}
 
-	public void SaveEcosystem(Ecosystem ecosystem, string filePath)
+	public void SaveEcosystem(Godot.Collections.Dictionary dict, string filePath)
 	{
 		using var file = FileAccess.Open(filePath, FileAccess.ModeFlags.Write);
 		if (file == null)
@@ -37,7 +37,6 @@ public partial class DataManager : Node
 			return;
 		}
 
-		var dict = EcosystemToDictionary(ecosystem);
 		var jsonString = Json.Stringify(dict);
 		file.StoreString(jsonString);
 	}
@@ -74,6 +73,115 @@ public partial class DataManager : Node
 		return null;
 	}
 
+	public Godot.Collections.Dictionary PlanetToDictionary(Planet planet)
+	{
+		var dict = new Godot.Collections.Dictionary();
+		dict["Name"] = planet.Name;
+		
+		// Save settings
+		var settingsDict = new Godot.Collections.Dictionary();
+		settingsDict["PlanetType"] = (int)planet.Settings.PlanetType;
+		settingsDict["Temperature"] = planet.Settings.Temperature;
+		settingsDict["Hydrology"] = planet.Settings.Hydrology;
+		settingsDict["Gravity"] = planet.Settings.Gravity;
+		settingsDict["LandMasses"] = planet.Settings.LandMasses;
+		settingsDict["PrimaryChemistry"] = (int)planet.Settings.PrimaryChemistry;
+		dict["Settings"] = settingsDict;
+		
+		// Save land masses
+		var landMassesArray = new Godot.Collections.Array();
+		foreach (var landMass in planet.LandMasses)
+		{
+			var landMassDict = new Godot.Collections.Dictionary();
+			landMassDict["Name"] = landMass.Name;
+			
+			var biomesArray = new Godot.Collections.Array();
+			foreach (var ecosystem in landMass.Biomes)
+			{
+				biomesArray.Add(EcosystemToDictionary(ecosystem));
+			}
+			landMassDict["Biomes"] = biomesArray;
+			landMassesArray.Add(landMassDict);
+		}
+		dict["LandMasses"] = landMassesArray;
+		
+		// Save water bodies
+		var waterBodiesArray = new Godot.Collections.Array();
+		foreach (var waterBody in planet.WaterBodies)
+		{
+			var waterBodyDict = new Godot.Collections.Dictionary();
+			waterBodyDict["Name"] = waterBody.Name;
+			waterBodyDict["WaterType"] = waterBody.WaterType;
+			
+			var biomesArray = new Godot.Collections.Array();
+			foreach (var ecosystem in waterBody.Biomes)
+			{
+				biomesArray.Add(EcosystemToDictionary(ecosystem));
+			}
+			waterBodyDict["Biomes"] = biomesArray;
+			waterBodiesArray.Add(waterBodyDict);
+		}
+		dict["WaterBodies"] = waterBodiesArray;
+		
+		return dict;
+	}
+
+	public Planet DictionaryToPlanet(Godot.Collections.Dictionary dict)
+	{
+		var planet = new Planet();
+		planet.Name = dict["Name"].AsString();
+		
+		// Load settings
+		var settingsDict = dict["Settings"].AsGodotDictionary();
+		var settings = new SettingsManager.PlanetSettings();
+		settings.PlanetType = (SettingsManager.PlanetType)settingsDict["PlanetType"].AsInt32();
+		settings.Temperature = settingsDict["Temperature"].AsSingle();
+		settings.Hydrology = settingsDict["Hydrology"].AsSingle();
+		settings.Gravity = settingsDict["Gravity"].AsSingle();
+		settings.LandMasses = settingsDict["LandMasses"].AsInt32();
+		settings.PrimaryChemistry = (SettingsManager.PlanetSettings.ChemistryBasis)settingsDict["PrimaryChemistry"].AsInt32();
+		planet.Settings = settings;
+		
+		// Load land masses
+		planet.LandMasses = new List<LandMass>();
+		var landMassesArray = dict["LandMasses"].AsGodotArray();
+		foreach (var lm in landMassesArray)
+		{
+			var landMassDict = lm.AsGodotDictionary();
+			var landMass = new LandMass();
+			landMass.Name = landMassDict["Name"].AsString();
+			
+			landMass.Biomes = new List<Ecosystem>();
+			var biomesArray = landMassDict["Biomes"].AsGodotArray();
+			foreach (var eco in biomesArray)
+			{
+				landMass.Biomes.Add(DictionaryToEcosystem(eco.AsGodotDictionary()));
+			}
+			planet.LandMasses.Add(landMass);
+		}
+		
+		// Load water bodies
+		planet.WaterBodies = new List<WaterBody>();
+		var waterBodiesArray = dict["WaterBodies"].AsGodotArray();
+		foreach (var wb in waterBodiesArray)
+		{
+			var waterBodyDict = wb.AsGodotDictionary();
+			var waterBody = new WaterBody();
+			waterBody.Name = waterBodyDict["Name"].AsString();
+			waterBody.WaterType = waterBodyDict["WaterType"].AsString();
+			
+			waterBody.Biomes = new List<Ecosystem>();
+			var biomesArray = waterBodyDict["Biomes"].AsGodotArray();
+			foreach (var eco in biomesArray)
+			{
+				waterBody.Biomes.Add(DictionaryToEcosystem(eco.AsGodotDictionary()));
+			}
+			planet.WaterBodies.Add(waterBody);
+		}
+		
+		return planet;
+	}
+
 	public Godot.Collections.Dictionary EcosystemToDictionary(Ecosystem ecosystem)
 	{
 		var dict = new Godot.Collections.Dictionary();
@@ -103,6 +211,7 @@ public partial class DataManager : Node
 			["SizeCategory"] = creature.SizeCategory,
 			["SpecificSize"] = creature.SpecificSize,
 			["GravitySizeMultiplier"] = creature.GravitySizeMultiplier,
+			["WeightInPounds"] = creature.WeightInPounds,
 			["Symmetry"] = creature.Symmetry,
 			["Locomotion"] = creature.Locomotion,
 			["LimbStructure"] = creature.LimbStructure,
@@ -173,7 +282,6 @@ public partial class DataManager : Node
 	public Creature DictionaryToCreature(Godot.Collections.Dictionary dict)
 	{
 		var creature = new Creature();
-		
 		try
 		{
 			// Basic properties with null checks
@@ -184,6 +292,7 @@ public partial class DataManager : Node
 			if (dict.ContainsKey("SizeCategory")) creature.SizeCategory = dict["SizeCategory"].AsString();
 			if (dict.ContainsKey("SpecificSize")) creature.SpecificSize = dict["SpecificSize"].AsSingle();
 			if (dict.ContainsKey("GravitySizeMultiplier")) creature.GravitySizeMultiplier = dict["GravitySizeMultiplier"].AsSingle();
+			if (dict.ContainsKey("WeightInPounds")) creature.WeightInPounds = dict["WeightInPounds"].AsSingle();
 			if (dict.ContainsKey("Symmetry")) creature.Symmetry = dict["Symmetry"].AsString();
 			if (dict.ContainsKey("Locomotion")) creature.Locomotion = dict["Locomotion"].AsString();
 			if (dict.ContainsKey("LimbStructure")) creature.LimbStructure = dict["LimbStructure"].AsString();
@@ -243,7 +352,7 @@ public partial class DataManager : Node
 				{
 					foreach (var key in mentalTraitsDict.Keys)
 					{
-						creature.MentalTraits[key.AsString()] = mentalTraitsDict[key].AsInt32();
+						creature.MentalTraits[key.AsString()] = mentalTraitsDict[key].AsString();
 					}
 				}
 				// Check if MentalTraits is a string
@@ -257,10 +366,7 @@ public partial class DataManager : Node
 						if (keyValue.Length == 2)
 						{
 							string key = keyValue[0].Trim();
-							if (int.TryParse(keyValue[1].Trim(), out int traitValue))
-							{
-								creature.MentalTraits[key] = traitValue;
-							}
+							creature.MentalTraits[key] = keyValue[1].Trim();
 						}
 					}
 				}
@@ -311,5 +417,82 @@ public partial class DataManager : Node
 			}
 		}
 		return dict;
+	}
+	
+	public void SavePlanetData(Godot.Collections.Dictionary planetDict, string filePath)
+	{
+		using var file = FileAccess.Open(filePath, FileAccess.ModeFlags.Write);
+		if (file == null)
+		{
+			GD.PrintErr($"Failed to open file for writing: {filePath}");
+			return;
+		}
+
+		var jsonString = Json.Stringify(planetDict);
+		file.StoreString(jsonString);
+	}
+
+	public Godot.Collections.Dictionary LoadPlanetData(string filePath)
+	{
+		if (!FileAccess.FileExists(filePath))
+		{
+			GD.PrintErr("File not found: " + filePath);
+			return null;
+		}
+
+		using var file = FileAccess.Open(filePath, FileAccess.ModeFlags.Read);
+		if (file == null)
+		{
+			GD.PrintErr($"Failed to open file for reading: {filePath}");
+			return null;
+		}
+
+		var jsonString = file.GetAsText();
+		var json = new Json();
+		var error = json.Parse(jsonString);
+		
+		if (error == Error.Ok)
+		{
+			var data = json.Data;
+			if (data.Obj is Godot.Collections.Dictionary dict)
+			{
+				return dict;
+			}
+		}
+
+		GD.PrintErr("Failed to parse JSON or convert to Dictionary");
+		return null;
+	}
+	
+	public Godot.Collections.Dictionary LoadEcosystemAsDict(string filePath)
+	{
+		if (!FileAccess.FileExists(filePath))
+		{
+			GD.PrintErr("File not found: " + filePath);
+			return null;
+		}
+
+		using var file = FileAccess.Open(filePath, FileAccess.ModeFlags.Read);
+		if (file == null)
+		{
+			GD.PrintErr($"Failed to open file for reading: {filePath}");
+			return null;
+		}
+
+		var jsonString = file.GetAsText();
+		var json = new Json();
+		var error = json.Parse(jsonString);
+		
+		if (error == Error.Ok)
+		{
+			var data = json.Data;
+			if (data.Obj is Godot.Collections.Dictionary dict)
+			{
+				return dict;
+			}
+		}
+
+		GD.PrintErr("Failed to parse JSON or convert to Dictionary");
+		return null;
 	}
 }
