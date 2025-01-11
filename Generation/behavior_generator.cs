@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BioLibrary;
 using BioStructures;
 
@@ -28,253 +29,154 @@ public partial class BehaviorGenerator : Node
 		}
 	}
 
-	public void GenerateBehavior(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	public void GenerateBehavior(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
-		creature.TrophicLevel = DetermineTrophicLevel();
-		creature.Locomotion = DetermineLocomotion(creature, habitatInfo);
-		GenerateSenses(creature, habitatInfo);
-		GenerateIntelligenceAndBehavior(creature, habitatInfo);
-	}
-
-	private string DetermineTrophicLevel()
-	{
-		return Roll.Seek(BioData.Trophic_Level()["Non-sapient"]);
-	}
-
-	private string DetermineLocomotion(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		int locomotionRoll = Roll.Dice(2);
-		locomotionRoll += CalculateLocomotionModifiers(creature);
-		
-		var locomotionOptions = BioData.Primary_Locomotion()[habitatInfo.habitat];
-		return Roll.Seek(locomotionOptions, locomotionRoll);
-	}
-
-	private int CalculateLocomotionModifiers(Creature creature)
-	{
-		int modifier = 0;
-		
-		switch (creature.TrophicLevel)
+		try
 		{
-			case "Pouncing Carnivore":
-			case "Chasing Carnivore":
-			case "Omnivore":
-			case "Gathering Herbivore":
-			case "Scavenger":
-				modifier += 1;
-				break;
+			GenerateIntelligenceAndBehavior(creature, settings, habitatInfo);
 		}
-
-		return modifier;
-	}
-
-	private void GenerateSenses(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		creature.Senses = "";
-
-		// Determine primary sense
-		int senseRoll = Roll.Dice(3);
-		senseRoll += CalculatePrimarySenseModifiers(creature, habitatInfo);
-		
-		var primarySense = Roll.Seek(BioData.Senses()["Primary Sense"], senseRoll);
-		
-		// Generate detailed sense information
-		var senseDetails = new List<string> { primarySense };
-		
-		// Vision
-		if (primarySense == "Vision" || Roll.Dice(3) + 4 >= 11)
+		catch (Exception e)
 		{
-			int visionRoll = Roll.Dice(3) + (primarySense == "Vision" ? 4 : 0);
-			visionRoll += CalculateVisionModifiers(creature, habitatInfo);
-			senseDetails.Add(Roll.Seek(BioData.Senses()["Vision"], visionRoll));
-		}
-
-		// Hearing
-		if (primarySense == "Hearing" || Roll.Dice(3) + 4 >= 11)
-		{
-			int hearingRoll = Roll.Dice(3) + (primarySense == "Hearing" ? 4 : 0);
-			hearingRoll += CalculateHearingModifiers(creature, habitatInfo);
-			senseDetails.Add(Roll.Seek(BioData.Senses()["Hearing"], hearingRoll));
-		}
-
-		// Special senses
-		foreach (var specialSense in BioData.Senses()["Special Senses"])
-		{
-			if (IsSpecialSenseViable(specialSense.Key, creature, habitatInfo))
-			{
-				int specialRoll = Roll.Dice(2) + CalculateSpecialSenseModifiers(specialSense.Key, creature, habitatInfo);
-				if (specialRoll >= 11)
-				{
-					senseDetails.Add(specialSense.Key);
-				}
-			}
-		}
-
-		creature.Senses = string.Join(", ", senseDetails);
-	}
-
-	private int CalculatePrimarySenseModifiers(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		int modifier = 0;
-		
-		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) modifier -= 2;
-		if (creature.TrophicLevel.Contains("autotroph")) modifier += 2;
-
-		return modifier;
-	}
-
-	private int CalculateVisionModifiers(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		int modifier = 0;
-		
-		if (creature.Locomotion == "Digging") modifier -= 4;
-		if (creature.Locomotion == "Climbing") modifier += 2;
-		if (creature.Locomotion == "Winged flight") modifier += 3;
-		if (habitatInfo.habitat == "Deep Ocean") modifier -= 4;
-		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) modifier -= 2;
-		if (creature.TrophicLevel == "Filter Feeder") modifier -= 2;
-		if (creature.TrophicLevel.Contains("Carnivore") || creature.TrophicLevel == "Gathering Herbivore") modifier += 2;
-
-		return modifier;
-	}
-
-	private int CalculateHearingModifiers(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		if (creature == null)
-		{
-			GD.PrintErr("Creature is null in CalculateHearingModifiers");
-			return 0;
-		}
-
-		int modifier = 0;
-		
-		// Add hearing modifiers based on other senses and conditions
-		if (creature.Senses != null)
-		{
-			if (creature.Senses.Contains("Blind")) modifier += 2;
-			if (creature.Senses.Contains("Bad Sight")) modifier += 1;
-		}
-		
-		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) modifier += 1;
-
-		return modifier;
-	}
-
-	private bool IsSpecialSenseViable(string sense, Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		switch (sense)
-		{
-			case "Ultravision":
-				return habitatInfo.zone != HabitatGenerator.HabitatZone.Water && creature.ChemicalBasis != "Ammonia-Based";
-			case "Detect (Heat)":
-				return habitatInfo.zone != HabitatGenerator.HabitatZone.Water;
-			case "Detect (Electric Fields)":
-				return habitatInfo.zone == HabitatGenerator.HabitatZone.Water;
-			case "Perfect Balance":
-				return habitatInfo.zone == HabitatGenerator.HabitatZone.Land;
-			default:
-				return true;
+			GD.PrintErr($"Error in GenerateBehavior: {e.Message}\n{e.StackTrace}");
 		}
 	}
 
-	private int CalculateSpecialSenseModifiers(string sense, Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	private void GenerateIntelligenceAndBehavior(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
-		int modifier = 0;
+		// Animal Intelligence (2d6)
+		int intelligenceRoll = Roll.Dice(2, 6);
+		if (new [] {"Photosynthetic", "Chemosynthetic", "Filter Feeder", "Grazing Herbivore"}.Contains(creature.TrophicLevel)) intelligenceRoll -= 1;
+		if ((creature.TrophicLevel ?? "") == "Gathering Herbivore" || (creature.TrophicLevel ?? "") == "Omnivore") intelligenceRoll += 1;
+		if (creature.SizeCategory == "Small") intelligenceRoll -= 1;
+		if ((creature.ReproductiveStrategy ?? "") == "Strong r-Strategy") intelligenceRoll -= 1;
+		if ((creature.ReproductiveStrategy ?? "") == "Strong K-Strategy") intelligenceRoll += 1;
 		
-		switch (sense)
-		{
-			case "360° Vision":
-			case "Peripheral Vision":
-				if (habitatInfo.habitat == "Plains" || habitatInfo.habitat == "Desert") modifier += 1;
-				if (creature.TrophicLevel.Contains("Herbivore")) modifier += 1;
-				if (creature.Symmetry == "Radial" || creature.Symmetry == "Spherical") modifier += 1;
-				break;
-			case "Absolute Direction":
-				if (habitatInfo.habitat == "Ocean") modifier += 1;
-				if (creature.Locomotion == "Winged flight" || creature.Locomotion == "Digging") modifier += 1;
-				break;
-		}
+		var intelligenceTable = BioData.AnimalIntelligence()["Animal Intelligence"];
+		creature.AnimalIntelligence = Roll.Seek(intelligenceTable, intelligenceRoll);
 
-		return modifier;
-	}
+		// Mating Behavior (2d6)
+		int matingRoll = Roll.Dice(2, 6);
+		if ((creature.Sexes ?? "") == "Hermaphrodite") matingRoll -= 2;
+		if ((creature.Gestation ?? "") == "Spawning/Pollinating") matingRoll -= 1;
+		if ((creature.Gestation ?? "") == "Live-Bearing") matingRoll += 1;
+		
+		var matingTable = BioData.AnimalIntelligence()["Mating Behavior"];
+		creature.MatingBehavior = Roll.Seek(matingTable, matingRoll);
 
-	private void GenerateIntelligenceAndBehavior(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		// Animal Intelligence
-		int intelligenceRoll = Roll.Dice(2) + CalculateIntelligenceModifiers(creature);
-		creature.AnimalIntelligence = Roll.Seek(BioData.AnimalIntelligence()["Animal Intelligence"], intelligenceRoll);
+		// Social Organization (2d6)
+		int socialRoll = Roll.Dice(2);
+		if ((creature.TrophicLevel ?? "").Contains("Carnivore")) socialRoll -= 1;
+		if ((creature.TrophicLevel ?? "") == "Grazing Herbivore") socialRoll += 1;
+		if (creature.SizeCategory == "Large") socialRoll -= 1;
+		if ((creature.MatingBehavior ?? "") == "Harem") socialRoll += 1;
+		if ((creature.MatingBehavior ?? "") == "Mating only, no pair bond") socialRoll -= 1;
+		
+		var socialTable = BioData.AnimalIntelligence()["Social Organization Type"];
+		creature.SocialOrganization = Roll.Seek(socialTable, socialRoll);
 
 		// Mental Qualities
-		creature.MentalQualities = DetermineMentalQualities(creature, habitatInfo);
+		GenerateMentalQualities(creature, settings, habitatInfo);
 	}
 
-	private int CalculateIntelligenceModifiers(Creature creature)
+	private void GenerateMentalQualities(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
-		int modifier = 0;
-		
-		if (creature.TrophicLevel == "Autotroph" || 
-			creature.TrophicLevel == "Filter Feeder" || 
-			creature.TrophicLevel == "Grazing Herbivore") 
-			modifier -= 1;
-		
-		if (creature.TrophicLevel == "Gathering Herbivore" || 
-			creature.TrophicLevel == "Omnivore")
-			modifier += 1;
-		
-		if (creature.SizeCategory == "Small") modifier -= 1;
+		creature.MentalTraits = new Dictionary<string, int>();
 
-		return modifier;
+		// Initialize properties with default values if they are null
+		creature.ReproductiveStrategy = creature.ReproductiveStrategy ?? "Balanced Strategy";
+		creature.AnimalIntelligence = creature.AnimalIntelligence ?? "Instinctual";
+		creature.SocialOrganization = creature.SocialOrganization ?? "Solitary";
+		creature.Sexes = creature.Sexes ?? "Male/Female";
+		creature.Gestation = creature.Gestation ?? "Live-Bearing";
+
+		// Chauvinism
+		int chauvScore = RollMentalTrait();
+		if ((creature.TrophicLevel ?? "") is "Photosynthetic" or "Chemosynthetic" or "Filter Feeder") chauvScore -= 1;
+		if ((creature.TrophicLevel ?? "") is "Parasite" or "Scavenger") chauvScore -= 2;
+		if (creature.SocialOrganization.Contains("group") || creature.SocialOrganization == "Hive") chauvScore += 2;
+		if (creature.Sexes is "Asexual reproduction or Parthenogenesis" || creature.Gestation == "Spawning/Pollinating") chauvScore -= 1;
+		if (creature.SocialOrganization is "Solitary" or "Pair-bonded") chauvScore -= 1;
+		
+		// Concentration
+		int concScore = RollMentalTrait();
+		if ((creature.TrophicLevel ?? "") is "Pouncing Carnivore" or "Chasing Carnivore") concScore += 1;
+		if ((creature.TrophicLevel ?? "").Contains("Herbivore")) concScore -= 1;
+		if (creature.ReproductiveStrategy == "Strong K-Strategy") concScore += 1;
+		
+		// Curiosity
+		int curScore = RollMentalTrait();
+		if ((creature.TrophicLevel ?? "") == "Omnivore") curScore += 1;
+		if ((creature.TrophicLevel ?? "") is "Grazing Herbivore" or "Filter Feeder") curScore -= 1;
+		if ((creature.SenseCapabilities?["Vision"] ?? "") is "Blindness" or "Light Sense") curScore -= 1;
+		if (creature.ReproductiveStrategy == "Strong r-Strategy") curScore -= 1;
+		if (creature.ReproductiveStrategy == "Strong K-Strategy") curScore += 1;
+		
+		// Egoism
+		int egoScore = RollMentalTrait();
+		if (creature.SocialOrganization == "Solitary") egoScore += 1;
+		if (creature.MatingBehavior == "Harem") egoScore += 1;
+		if (creature.SocialOrganization == "Hive") egoScore -= 1;
+		if (creature.ReproductiveStrategy == "Strong K-Strategy") egoScore += 1;
+		if (creature.ReproductiveStrategy == "Strong r-Strategy") egoScore -= 1;
+		
+		// Empathy
+		int empScore = RollMentalTrait();
+		if ((creature.TrophicLevel ?? "") == "Chasing Carnivore") empScore += 1;
+		if ((creature.TrophicLevel ?? "") is "Photosynthetic" or "Chemosynthetic" or "Filter Feeder" or "Grazing Herbivore" or "Scavenger") empScore -= 1;
+		if (creature.SocialOrganization is "Solitary" or "Pair-bonded") empScore -= 1;
+		if (creature.SocialOrganization.Contains("group")) empScore += 1;
+		if (creature.ReproductiveStrategy == "Strong K-Strategy") empScore += 1;
+		
+		// Gregariousness
+		int gregScore = RollMentalTrait();
+		if ((creature.TrophicLevel ?? "") is "Pouncing Carnivore" or "Scavenger" or "Filter Feeder" or "Photosynthetic" or "Chemosynthetic") gregScore -= 1;
+		if ((creature.TrophicLevel ?? "").Contains("Herbivore")) gregScore -= 1;
+		if (creature.SocialOrganization is "Solitary" or "Pair-bonded") gregScore -= 1;
+		if (creature.SocialOrganization.Contains("Medium") || creature.SocialOrganization.Contains("Large")) gregScore += 1;
+		if (creature.SocialOrganization == "Hive") gregScore += 2;
+		if (creature.Sexes is "Asexual reproduction or Parthenogenesis" or "Hermaphrodite") gregScore += 1;
+		if (creature.Gestation == "Spawning/Pollinating") gregScore -= 1;
+		
+		// Imagination
+		int imagScore = RollMentalTrait();
+		if ((creature.TrophicLevel ?? "") is "Pouncing Carnivore" or "Omnivore" or "Gathering Herbivore") imagScore += 1;
+		if ((creature.TrophicLevel ?? "") is "Photosynthetic" or "Chemosynthetic" or "Filter Feeder" or "Grazing Herbivore") imagScore -= 1;
+		if (creature.ReproductiveStrategy == "Strong K-Strategy") imagScore += 1;
+		if (creature.ReproductiveStrategy == "Strong r-Strategy") imagScore -= 1;
+		
+		// Suspicion
+		int suspScore = RollMentalTrait();
+		if ((creature.TrophicLevel ?? "").Contains("Carnivore")) suspScore -= 1;
+		if ((creature.TrophicLevel ?? "") == "Grazing Herbivore") suspScore += 1;
+		if ((creature.SenseCapabilities?["Vision"] ?? "") is "Blindness" or "Light Sense") suspScore += 1;
+		if (creature.SizeCategory == "Large") suspScore -= 1;
+		if (creature.SizeCategory == "Small") suspScore += 1;
+		if (creature.SocialOrganization is "Solitary" or "Pair-bonded") suspScore += 1;
+		
+		// Playfulness
+		int playScore = RollMentalTrait();
+		if (creature.ReproductiveStrategy == "Strong K-Strategy") playScore += 2;
+		else if (creature.ReproductiveStrategy.Contains("K-Strategy")) playScore += 1;
+		if (creature.AnimalIntelligence != "Mindless" && creature.AnimalIntelligence != "Instinctual") playScore += 1;
+		if (creature.SocialOrganization == "Solitary") playScore -= 1;
+		if (creature.AnimalIntelligence is "Instinctual" or "Mindless") playScore -= 3;
+
+		// Add all scores to mental traits
+		creature.MentalTraits["Chauvinism"] = chauvScore;
+		creature.MentalTraits["Concentration"] = concScore;
+		creature.MentalTraits["Curiosity"] = curScore;
+		creature.MentalTraits["Egoism"] = egoScore;
+		creature.MentalTraits["Empathy"] = empScore;
+		creature.MentalTraits["Gregariousness"] = gregScore;
+		creature.MentalTraits["Imagination"] = imagScore;
+		creature.MentalTraits["Suspicion"] = suspScore;
+		creature.MentalTraits["Playfulness"] = playScore;
 	}
 
-	private string DetermineMentalQualities(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	private int RollMentalTrait()
 	{
-		var qualities = new List<string>();
-		
-		foreach (var quality in BioData.MentalQualities())
-		{
-			int baseRoll = Roll.Dice(1) - Roll.Dice(1);
-			int modifier = CalculateMentalQualityModifier(quality.Key, creature, habitatInfo);
-			
-			int totalModifier = baseRoll + modifier;
-			qualities.Add($"{quality.Key}: {DetermineMentalQualityLevel(totalModifier)}");
-		}
-
-		return string.Join(", ", qualities);
-	}
-
-	private int CalculateMentalQualityModifier(string quality, Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		int modifier = 0;
-		
-		switch (quality)
-		{
-			case "Curiosity":
-				if (creature.TrophicLevel == "Omnivore") modifier += 1;
-				if (creature.TrophicLevel == "Grazing Herbivore" || creature.TrophicLevel == "Filter Feeder") modifier -= 1;
-				break;
-			case "Gregariousness":
-				if (creature.TrophicLevel == "Pouncing Carnivore" || 
-					creature.TrophicLevel == "Scavenger" || 
-					creature.TrophicLevel == "Filter Feeder" || 
-					creature.TrophicLevel.Contains("Herbivore")) 
-					modifier -= 1;
-				break;
-		}
-
-		return modifier;
-	}
-
-	private string DetermineMentalQualityLevel(int modifier)
-	{
-		switch (modifier)
-		{
-			case int n when n >= 3: return "Very High";
-			case int n when n == 2: return "High";
-			case int n when n == 1: return "Above Average";
-			case 0: return "Average";
-			case int n when n == -1: return "Below Average";
-			case int n when n == -2: return "Low";
-			default: return "Very Low";
-		}
+		int die1 = Roll.Dice(1, 6);
+		int die2 = Roll.Dice(1, 6);
+		return die1 - die2;
 	}
 }

@@ -51,6 +51,16 @@ namespace BioLibrary
 						{"Sea", 13},
 						{"Reef", 18}
 					}
+				},
+				{
+					"Jovian", new Dictionary<string, int>
+					{
+						{"High Atmosphere", 7},
+						{"Mid Atmosphere", 9},
+						{"Tidal", 15},
+						{"Deep Atmosphere", 16},
+						{"Storm-Dwelling", 18}
+					}
 				}
 			};
 			return habitats;
@@ -345,14 +355,14 @@ namespace BioLibrary
 		{
 			var tailFeatures = new Dictionary<string, int>
 			{
-				{"No features (tail is a 0-point advantage)", 5},
-				{"Striker tail (Striker doing crushing damage)", 6},
-				{"Long tail (Long enhancement)", 7},
-				{"Constricting tail (Constriction Attack)", 8},
-				{"Barbed striker tail (Striker doing cutting or piercing damage)", 9},
-				{"Gripping tail (counts as an Extra Arm with Bad Grip)", 10},
-				{"Branching tail (tail splits according to body symmetry)", 11},
-				{"Combination (roll 1d+5)", 12}
+				{"No features", 5},
+				{"Striker tail", 6},
+				{"Long tail", 7},
+				{"Constricting tail", 8},
+				{"Barbed striker tail", 9},
+				{"Gripping tail", 10},
+				{"Branching tail", 11},
+				{"Combination", 12}	//roll 1d+5
 			};
 			return tailFeatures;
 		}
@@ -361,13 +371,13 @@ namespace BioLibrary
 		{
 			var numberOfManipulators = new Dictionary<string, int>
 			{
-				{"No manipulators; limbs are locomotive or Strikers only", 6},
-				{"1 set of manipulators with Bad Grip", 7},
-				{"Prehensile tail or trunk (roll 1d: on a 6 check again for other manipulators)", 8},
-				{"1 set of manipulators with normal DX", 9},
-				{"2 sets of manipulators (roll 1d for each pair: 1-4 Bad Grip, 5-6 normal DX)", 10},
-				{"1d sets of manipulators (roll 1d for each pair: 1-4 Bad Grip, 5-6 normal DX)", 11},
-				{"1d sets of manipulators (roll 1d for each pair: 1-4 normal DX, 5-6 High Manual Dexterity 1)", 12}
+				{"No manipulators", 6},
+				{"1 set of manipulators, Bad Grip", 7},
+				{"Prehensile tail or trunk", 8}, 	//(roll 1d: on a 6 check again for other manipulators)
+				{"1 set of manipulators with normal Grip", 9},
+				{"2 sets of manipulators", 10}, 	//(roll 1d for each pair: 1-4 Bad Grip, 5-6 normal)
+				{"1d sets of manipulators", 11},	//(roll 1d for each pair: 1-4 Bad Grip, 5-6 normal)
+				//on 12, roll 1d for each pair: 1-4 normal DX, 5-6 High Manual Dexterity 1)
 			};
 			return numberOfManipulators;
 		}
@@ -404,38 +414,38 @@ namespace BioLibrary
 					{
 						{"Soft skin", 4},
 						{"Normal skin", 5},
-						{"Hide (DR 1)", 7},
-						{"Thick Hide (DR 4)", 8},
-						{"Armor shell (DR 5)", 9},
-						{"Blubber (DR 4 and 1d levels of Temperature Tolerance)", 12}
+						{"Hide", 7},
+						{"Thick Hide", 8},
+						{"Armor shell", 9},
+						{"Blubber", 12}		//1d levels of Temperature Tolerance
 					}
 					},
 				{
 					"Feathers", new Dictionary<string, int>
 					{
 						{"Normal skin", 5},
-						{"Feathers (+1 level of Temperature Tolerance)", 8},
-						{"Thick feathers (+2 levels of Temperature Tolerance)", 10},
-						{"Feathers over Hide (DR 1 and +1 Temperature Tolerance)", 11},
+						{"Feathers", 8},
+						{"Thick feathers", 10},
+						{"Feathers over Hide", 11},
 						{"Spines", 14}
 					}
 				},
 				{
 					"Exoskeleton", new Dictionary<string, int>
 					{
-						{"Light exoskeleton (DR 0)", 2},
-						{"Tough exoskeleton (DR 1)", 4},
-						{"Heavy exoskeleton (DR 3)", 5},
-						{"Armor shell (DR 5)", 8}
+						{"Light exoskeleton", 2},
+						{"Tough exoskeleton", 4},
+						{"Heavy exoskeleton", 5},
+						{"Armor shell", 8}
 					}
 				},
 				{
 					"Scales", new Dictionary<string, int>
 					{
 						{"Normal skin", 3},
-						{"Scales (DR 1)", 8},
-						{"Heavy scales (DR 3)", 10},
-						{"Armor shell (DR 5)", 14}
+						{"Scales", 8},
+						{"Heavy scales", 10},
+						{"Armor shell", 14}
 					}
 				},
 				{
@@ -443,8 +453,8 @@ namespace BioLibrary
 					{
 						{"Normal skin", 5},
 						{"Fur", 7},
-						{"Thick fur (+1 level of Temperature Tolerance)", 9},
-						{"Thick fur over Hide (DR 1 and +1 level of Temperature Tolerance)", 11},
+						{"Thick fur", 9},
+						{"Thick fur over Hide", 11},
 						{"Spines", 14}
 					}
 				}
@@ -459,7 +469,7 @@ namespace BioLibrary
 				{"Metamorphosis", 5},
 				{"Molting", 6},
 				{"Continuous Growth", 11},
-				{"Unusual Growth Pattern (adding segments, branching, etc.)", 14}
+				{"Unusual Growth Pattern", 14}
 			};
 			return growthPattern;
 		}
@@ -530,11 +540,11 @@ namespace BioLibrary
 					"Vision", new Dictionary<string, int>
 					{
 						{"Blindness", 6},
-						{"Blindness (Can sense light and dark, -10%) [-45]", 7},
+						{"Light Sense", 7},
 						{"Bad Sight and Colorblindness", 8},
-						{"Bad Sight or Colorblindness*", 9},
-						{"Normal Vision*", 10},
-						{"Telescopic Vision 4*", 15}
+						{"Bad Sight", 9},
+						{"Normal Vision", 10},
+						{"Telescopic Vision", 15}
 					}
 				},
 				{
@@ -542,46 +552,46 @@ namespace BioLibrary
 					{
 						{"Deafness", 6},
 						{"Hard of Hearing", 7},
-						{"Normal Hearing*", 9},
-						{"Normal Hearing with extended range (Subsonic Hearing if Large, Ultrahearing otherwise)*", 11},
-						{"Acute Hearing 4**", 12},
-						{"Acute Hearing 4 and either Subsonic Hearing or Ultrahearing**", 13},
-						{"Acute Hearing 4 with Ultrasonic Hearing and Sonar**", 14}
+						{"Normal Hearing", 9},
+						{"Extemded Range Hearing", 11},
+						{"Acute Hearing", 12},
+						{"Subsonic Hearing", 13},
+						{"Ultrasonic Hearing", 14}	//also grants Sonar
 					}
 				},
 				{
 					"Touch", new Dictionary<string, int>
 					{
-						{"Numb-2 DX from poor sense of touch", 2},
-						{"-1 DX from poor sense of touch", 3},
+						{"Numb", 2},
+						{"Poor sense of touch", 3},
 						{"Human-level touch", 5},
-						{"Acute Touch 4*", 7},
-						{"Acute Touch 4 and either Sensitive Touch or Vibration Sense*", 9}
+						{"Acute Touch", 7},
+						{"Sensitive to vibrations", 9}
 					}
 				},
 				{
 					"Taste/Smell", new Dictionary<string, int>
 					{
-						{"No Sense of Smell/Taste", 3},
-						{"No Sense of Smell (can taste, -50%) [-2 points]", 4},
-						{"Normal taste/smell", 6},
-						{"Acute Taste/Smell 4 (aquatic organisms use Acute Taste only)*", 9},
-						{"Acute Taste/Smell 4 and Discriminatory Smell (aquatic organisms use Discriminatory Taste)*", 11}
+						{"No Sense of Smell or Taste", 3},
+						{"No Sense of Smell", 4},
+						{"Normal Taste/Smell", 6},
+						{"Acute Taste/Smell", 9},
+						{"Discriminatory Smell/Discriminatory Taste", 11}
 					}
 				},
 				{
 					"Special Senses", new Dictionary<string, int>
 					{
-						{"360° Vision*", 11},
+						{"360° Vision", 11},
 						{"Absolute Direction", 11},
-						{"Discriminatory Hearing*", 11},
-						{"Peripheral Vision (10-12)", 11},
-						{"Night Vision 1d+3*", 11},
-						{"Ultravision*", 11},
-						{"Detect (Heat)*", 11},
-						{"Detect (Electric Fields)*", 11},
+						{"Discriminatory Hearing", 11},
+						{"Peripheral Vision", 11},
+						{"Night Vision", 11},
+						{"Ultravision", 11},
+						{"Heat Sensitive", 11},
+						{"Sensitive to Electric Fields", 11},
 						{"Perfect Balance", 11},
-						{"Scanning Sense (Radar)*", 11}
+						{"Sonar", 11}
 					}
 				}
 			};
@@ -594,11 +604,11 @@ namespace BioLibrary
 				{
 					"Animal Intelligence", new Dictionary<string, int>
 					{
-						{"Mindless (IQ 0)", 3},
-						{"Preprogrammed (IQ 1 and Cannot Learn)", 4},
-						{"Low Intelligence (IQ 1-3 and Bestial)", 6},
-						{"High Intelligence (IQ 3-5 and Bestial)", 9},
-						{"Presapient (IQ 5)", 11}
+						{"Mindless", 3},
+						{"Instinctual", 4},
+						{"Low Intelligence", 6},
+						{"High Intelligence", 9},
+						{"Presapient", 11}
 					}
 				},
 				{
@@ -616,9 +626,9 @@ namespace BioLibrary
 					{
 						{"Solitary", 6},
 						{"Pair-bonded", 7},
-						{"Small group of 2d members", 9},
-						{"Medium group of 4d members", 11},
-						{"Large Herd of 1d x 10 members", 12}
+						{"Small group", 9},		//2d members
+						{"Medium group", 11},	//4d members
+						{"Large Herd", 12}		//1d x 10 members
 					}
 				}
 			};
@@ -632,22 +642,20 @@ namespace BioLibrary
 				{
 					"Curiosity", new Dictionary<string, int>
 					{
-						{"Curious (9)", 3},
-						{"Curious (12)", 2},
-						{"Nosy (quirk)", 1},
+						{"Curious", 2},
+						{"Nosy", 1},
 						{"Normal", 0},
-						{"Staid (quirk)", -1},
-						{"Incurious (12)", -2},
-						{"Incurious (9)", -3}
+						{"Staid", -1},
+						{"Incurious", -2}
 					}
 				},
 				{
 					"Chauvinism", new Dictionary<string, int>
 					{
-						{"Chauvinistic (quirk)", 3},
+						{"Chauvinistic", 3},
 						{"Normal", 0},
-						{"Broad-Minded (quirk)", -1},
-						{"Undiscriminating (quirk)", -3}
+						{"Broad-Minded", -1},
+						{"Undiscriminating", -3}
 					}
 				},
 				{
@@ -655,31 +663,27 @@ namespace BioLibrary
 					{
 						{"Single-Minded and High Pain Threshold", 3},
 						{"Single-Minded", 2},
-						{"Attentive (quirk)", 1},
+						{"Attentive", 1},
 						{"Normal", 0},
 						{"Distractible (quirk)", -1},
-						{"Short Attention Span (12)", -2},
-						{"Short Attention Span (9)", -3}
+						{"Short Attention Span", -2}
 					}
 				},
 				{
 					"Egoism", new Dictionary<string, int>
 					{
-						{"Selfish (9)", 3},
-						{"Selfish (12)", 2},
-						{"Proud (quirk)", 1},
+						{"Selfish", 2},
+						{"Proud", 1},
 						{"Normal", 0},
-						{"Humble (quirk)", -1},
-						{"Selfless (12)", -2},
-						{"Selfless (6)", -3}
+						{"Humble", -1},
+						{"Selfless", -2}
 					}
 				},
 				{
 					"Empathy", new Dictionary<string, int>
 					{
-						{"Empathy", 3},
-						{"Empathy (Sensitive)", 2},
-						{"Responsive (quirk)", 1},
+						{"Empathetic", 2},
+						{"Responsive", 1},
 						{"Normal", 0},
 						{"Oblivious", -1},
 						{"Callous", -2},
@@ -691,40 +695,38 @@ namespace BioLibrary
 					{
 						{"Gregarious", 3},
 						{"Chummy", 2},
-						{"Congenial (quirk)", 1},
+						{"Congenial", 1},
 						{"Normal", 0},
-						{"Uncongenial (quirk)", -1},
-						{"Loner (12)", -2},
-						{"Loner (9)", -3}
+						{"Uncongenial", -1},
+						{"Loner", -2}
 					}
 				},
 				{
 					"Imagination", new Dictionary<string, int>
 					{
-						{"Imaginative (quirk)", 2},
+						{"Imaginative", 2},
 						{"Normal", 0},
-						{"Dull (quirk)", -1},
-						{"Hidebound", -2},
-						{"Hidebound and -1 IQ", -3}
+						{"Dull", -1},
+						{"Hidebound", -2}
 					}
 				},
 				{
 					"Suspicion", new Dictionary<string, int>
 					{
-						{"Fearfulness 1", 2},
-						{"Careful (quirk)", 1},
+						{"Fearful", 2},
+						{"Careful", 1},
 						{"Normal", 0},
-						{"Fearlessness 1", -1},
+						{"Fearless", -1},
 					}
 				},
 				{
 					"Playfulness", new Dictionary<string, int>
 					{
-						{"Compulsive Playfulness (12)", 2},
-						{"Playful (quirk)", 1},
+						{"Compulsive Playfulness", 2},
+						{"Playful", 1},
 						{"Normal", 0},
-						{"Serious (quirk)", -1},
-						{"Odious Racial Habit (Wet Blanket)", -2},
+						{"Serious", -1},
+						{"Odious", -2},
 						{"No Sense of Humor", -3}
 					}
 				}

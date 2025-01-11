@@ -1,29 +1,47 @@
-using System;
-using System.Collections.Generic;
 using Godot;
+using System;
 using BioStructures;
 
 public partial class Main : Node2D
 {
+	// Managers
+	private UIManager uiManager;
+	private DisplayManager displayManager;
+	private TreeManager treeManager;
+	private DataManager dataManager;
+	private SaveLoadManager saveLoadManager;
+	private FileDialogManager fileDialogManager;
+	private OptionsManager optionsManager;
+
+	// Other managers (already existing)
+	private SettingsManager settingsManager;
+	private GenerationManager generationManager;
+	private HabitatGenerator habitatGenerator;
+	private TrophicGenerator trophicGenerator;
+	private LocomotionGenerator locomotionGenerator;
+	private SizeGenerator sizeGenerator;
+	private SensesGenerator sensesGenerator;
+	private PhysiologyGenerator physiologyGenerator;
+	private BehaviorGenerator behaviorGenerator;
+	private ReproductionGenerator reproductionGenerator;
+	private NamingGenerator namingGenerator;
+	private PlanetGenerator planetGenerator;
+
+	// UI References
 	private Button generateButton;
 	private Button generateSingleButton;
 	private Button editButton;
 	private Button saveButton;
 	private Button deleteButton;
 	private Button optionsButton;
-	private ItemList speciesList;
+	private Button openFileButton;
+	private Tree ecosystemTree;
 	private RichTextLabel speciesDetails;
-	private Window generationSettingsWindow;
-	
-	private SettingsManager settingsManager;
-	private GenerationManager generationManager;
-	private HabitatGenerator habitatGenerator;
-	private PhysiologyGenerator physiologyGenerator;
-	private BehaviorGenerator behaviorGenerator;
-	private ReproductionGenerator reproductionGenerator;
-	private NamingGenerator namingGenerator;
+	private GenerationSettingsWindow generationSettingsWindow;
+	private Window editPopup;
+	private ConfirmationDialog confirmationDialog;
 
-	 public override void _Ready()
+	public override void _Ready()
 	{
 		try
 		{
@@ -38,11 +56,24 @@ public partial class Main : Node2D
 
 	private void InitializeManagers()
 	{
-		// Initialize SettingsManager first
 		settingsManager = new SettingsManager();
+		dataManager = new DataManager();
+		uiManager = new UIManager();
+		displayManager = new DisplayManager();
+		treeManager = new TreeManager();
+		saveLoadManager = new SaveLoadManager();
+		fileDialogManager = new FileDialogManager();
+		optionsManager = new OptionsManager();
+
 		AddChild(settingsManager);
+		AddChild(dataManager);
+		AddChild(uiManager);
+		AddChild(displayManager);
+		AddChild(treeManager);
+		AddChild(saveLoadManager);
+		AddChild(fileDialogManager);
+		AddChild(optionsManager);
 		
-		// Give it a frame to set up its Instance property
 		CallDeferred(nameof(InitializeOtherManagers));
 	}
 
@@ -55,24 +86,29 @@ public partial class Main : Node2D
 		}
 
 		generationManager = new GenerationManager();
-		AddChild(generationManager);
-
 		habitatGenerator = new HabitatGenerator();
-		AddChild(habitatGenerator);
-
+		trophicGenerator = new TrophicGenerator();
+		locomotionGenerator = new LocomotionGenerator();
+		sizeGenerator = new SizeGenerator();
 		physiologyGenerator = new PhysiologyGenerator();
-		AddChild(physiologyGenerator);
-
-		behaviorGenerator = new BehaviorGenerator();
-		AddChild(behaviorGenerator);
-
 		reproductionGenerator = new ReproductionGenerator();
-		AddChild(reproductionGenerator);
-
+		sensesGenerator = new SensesGenerator();
+		behaviorGenerator = new BehaviorGenerator();
 		namingGenerator = new NamingGenerator();
+		planetGenerator = new PlanetGenerator();
+		
+		AddChild(generationManager);
+		AddChild(habitatGenerator);
+		AddChild(trophicGenerator);
+		AddChild(locomotionGenerator);
+		AddChild(sizeGenerator);
+		AddChild(physiologyGenerator);
+		AddChild(reproductionGenerator);
+		AddChild(sensesGenerator);
+		AddChild(behaviorGenerator);
 		AddChild(namingGenerator);
+		AddChild(planetGenerator);
 
-		// Now that all managers are initialized, initialize UI
 		CallDeferred(nameof(InitializeUI));
 	}
 
@@ -80,47 +116,35 @@ public partial class Main : Node2D
 	{
 		try
 		{
-			// Disconnect existing signals first
-			if (generateButton != null)
-			{
-				generateButton.Pressed -= OnGenerateButtonPressed;
-			}
-			if (generateSingleButton != null)
-			{
-				generateSingleButton.Pressed -= OnGenerateSingleButtonPressed;
-			}
-			if (speciesList != null)
-			{
-				speciesList.ItemSelected -= OnSpeciesSelected;
-			}
+			// Get UI references
+		var buttonContainer = GetNode<Control>("GUI/MenuPanel/ButtonContainer");
+		generateButton = buttonContainer.GetNode<Button>("GenerateButton");
+		generateSingleButton = buttonContainer.GetNode<Button>("GenerateSingleButton");
+		editButton = buttonContainer.GetNode<Button>("EditButton");
+		saveButton = buttonContainer.GetNode<Button>("SaveButton");
+		deleteButton = buttonContainer.GetNode<Button>("DeleteButton");
+		openFileButton = buttonContainer.GetNode<Button>("OpenFileButton");
+		optionsButton = buttonContainer.GetNode<Button>("OptionsButton");
 
-			// Initialize buttons
-			generateButton = GetNodeOrNull<Button>("GUI/MenuPanel/ButtonContainer/GenerateButton");
-			generateSingleButton = GetNodeOrNull<Button>("GUI/MenuPanel/ButtonContainer/GenerateSingleButton");
-			
-			// Initialize content panels
-			speciesList = GetNodeOrNull<ItemList>("GUI/ContentPanel/MarginContainer/VSplitContainer/SpeciesList");
-			speciesDetails = GetNodeOrNull<RichTextLabel>("GUI/ContentPanel/MarginContainer/VSplitContainer/SpeciesDetails");
+		var splitContainer = GetNode<Container>("GUI/ContentPanel/MarginContainer/VSplitContainer");
+		ecosystemTree = splitContainer.GetNode<Tree>("EcosystemTree");
+		speciesDetails = splitContainer.GetNode<RichTextLabel>("SpeciesDetails");
 
-			// Connect signals if nodes exist
-			if (generateButton != null)
-				generateButton.Pressed += OnGenerateButtonPressed;
-			if (generateSingleButton != null)
-				generateSingleButton.Pressed += OnGenerateSingleButtonPressed;
-			if (speciesList != null)
-				speciesList.ItemSelected += OnSpeciesSelected;
+		editPopup = GetNode<Window>("EditPopup");
+		confirmationDialog = GetNode<ConfirmationDialog>("ConfirmationDialog");
 
-			// Load generation settings window
-			if (generationSettingsWindow == null)
-			{
-				var generationSettingsScene = GD.Load<PackedScene>("res://GUI/SettingsWindow/generation_settings_window.tscn");
-				if (generationSettingsScene != null)
-				{
-					generationSettingsWindow = generationSettingsScene.Instantiate<Window>();
-					AddChild(generationSettingsWindow);
-					generationSettingsWindow.Hide();
-				}
-			}
+			// Pass UI references to managers
+			uiManager.Initialize(generateButton, generateSingleButton, editButton, saveButton, deleteButton, openFileButton, optionsButton);
+			displayManager.Initialize(speciesDetails);
+			treeManager.Initialize(ecosystemTree);
+			fileDialogManager.Initialize(GetNode<FileDialog>("SaveDialog"), GetNode<FileDialog>("OpenDialog"));
+			optionsManager.Initialize(GetNode<Window>("OptionsWindow"));
+
+			// Connect signals
+			ConnectSignals();
+
+			// Initialize generation settings window
+			InitializeGenerationSettingsWindow();
 		}
 		catch (Exception e)
 		{
@@ -128,212 +152,116 @@ public partial class Main : Node2D
 		}
 	}
 
-	private void EnsureManager<T>(string nodeName) where T : Node, new()
+	private void ConnectSignals()
 	{
-		if (!HasNode(nodeName))
-		{
-			T manager = new T();
-			manager.Name = nodeName;
-			AddChild(manager);
-		}
+		generateButton.Pressed += OnGenerateButtonPressed;
+		generateSingleButton.Pressed += OnGenerateSingleButtonPressed;
+		editButton.Pressed += OnEditButtonPressed;
+		saveButton.Pressed += OnSaveButtonPressed;
+		deleteButton.Pressed += OnDeleteButtonPressed;
+		openFileButton.Pressed += OnOpenFileButtonPressed;
+		optionsButton.Pressed += OnOptionsButtonPressed;
+		
+		ecosystemTree.ItemSelected += OnEcosystemItemSelected;
+		
+		confirmationDialog.Confirmed += OnDeleteConfirmed;
+	}
+
+	private void InitializeGenerationSettingsWindow()
+	{
+		generationSettingsWindow = GetNode<GenerationSettingsWindow>("GenerationSettingsWindow");
+		generationSettingsWindow.SettingsConfirmed += OnSettingsConfirmed;
 	}
 
 	private void OnGenerateButtonPressed()
 	{
 		generationSettingsWindow.Show();
 	}
-	
+
+	private void OnSettingsConfirmed()
+	{
+		try
+		{
+			var planet = PlanetGenerator.Instance.GeneratePlanet(SettingsManager.Instance.CurrentSettings);
+			if (planet == null)
+			{
+				GD.PrintErr("Generated planet is null!");
+				return;
+			}
+
+			treeManager.DisplayPlanetData(planet, displayManager);
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error in OnSettingsConfirmed: {e.Message}\n{e.StackTrace}");
+		}
+	}
+
 	private void OnGenerateSingleButtonPressed()
 	{
 		try
 		{
-			GD.Print("Generate Single Button Pressed");
-			
-			if (GenerationManager.Instance == null)
+			var selectedEcosystem = treeManager.GetCurrentSelectedEcosystem();
+			var selectedBiomeItem = treeManager.GetCurrentSelectedBiomeItem();
+
+			if (selectedEcosystem == null || selectedBiomeItem == null)
 			{
-				GD.PrintErr("GenerationManager.Instance is null!");
+				GD.PrintErr("No biome selected for new species generation!");
 				return;
 			}
 			
-			var creature = GenerationManager.Instance.GenerateSingleSpecies();
+			var creature = GenerationManager.Instance.GenerateSingleSpecies(
+				SettingsManager.Instance.CurrentSettings, 
+				selectedEcosystem);
+
 			if (creature == null)
 			{
 				GD.PrintErr("Generated creature is null!");
 				return;
 			}
-			
-			GD.Print($"Generated creature: {creature.Name}");
-			
-			AddCreatureToList(creature);
-			DisplayCreatureDetails(creature);
+
+			treeManager.AddCreatureToTree(creature, selectedBiomeItem);
+			displayManager.DisplayCreatureDetails(creature);
+			treeManager.UpdateParentCounts(selectedBiomeItem);
 		}
 		catch (Exception e)
 		{
 			GD.PrintErr($"Error in OnGenerateSingleButtonPressed: {e.Message}\n{e.StackTrace}");
 		}
 	}
-	
-	private void AddCreatureToList(Creature creature)
-	{
-		if (speciesList == null)
-		{
-			GD.PrintErr("SpeciesList is null!");
-			return;
-		}
-		
-		int previousCount = speciesList.ItemCount;
-		speciesList.AddItem($"{creature.Name} ({creature.Habitat})");
-		int newCount = speciesList.ItemCount;
-		GD.Print($"Added creature to list. Items before: {previousCount}, after: {newCount}");
-		
-		int index = speciesList.ItemCount - 1;
-		
-		// Convert creature to a Godot Dictionary
-		var creatureDict = new Godot.Collections.Dictionary
-		{
-			["Name"] = creature.Name,
-			["ChemicalBasis"] = creature.ChemicalBasis,
-			["Habitat"] = creature.Habitat,
-			["TrophicLevel"] = creature.TrophicLevel,
-			["Locomotion"] = creature.Locomotion,
-			["SizeCategory"] = creature.SizeCategory,
-			["GravitySizeMultiplier"] = creature.GravitySizeMultiplier,
-			["Symmetry"] = creature.Symmetry,
-			["NumberOfLimbs"] = creature.NumberOfLimbs,
-			["TailFeatures"] = creature.TailFeatures,
-			["NumberOfManipulators"] = creature.NumberOfManipulators,
-			["Skeleton"] = creature.Skeleton,
-			["GrowthPattern"] = creature.GrowthPattern,
-			["Sexes"] = creature.Sexes,
-			["Gestation"] = creature.Gestation,
-			["SpecialGestation"] = creature.SpecialGestation,
-			["ReproductiveStrategy"] = creature.ReproductiveStrategy,
-			["Skin"] = creature.Skin,
-			["Senses"] = creature.Senses,
-			["AnimalIntelligence"] = creature.AnimalIntelligence,
-			["MentalQualities"] = creature.MentalQualities
-		};
-		
-		speciesList.SetItemMetadata(index, creatureDict);
-	}
 
 	private void OnEditButtonPressed()
 	{
-		// Implement edit functionality
+		editPopup.Show();
 	}
 
 	private void OnSaveButtonPressed()
 	{
-		// Implement save functionality
+		fileDialogManager.ShowSaveDialog();
 	}
 
 	private void OnDeleteButtonPressed()
 	{
-		// Implement delete functionality
+		confirmationDialog.Show();
+	}
+
+	private void OnOpenFileButtonPressed()
+	{
+		fileDialogManager.ShowOpenDialog();
 	}
 
 	private void OnOptionsButtonPressed()
 	{
-		// Implement options functionality
+		optionsManager.ShowOptions();
 	}
 
-	private void OnSpeciesSelected(long index)
+	private void OnEcosystemItemSelected()
 	{
-		var metadata = speciesList.GetItemMetadata((int)index);
-		if (metadata.Obj is Godot.Collections.Dictionary dict)
-		{
-			var creature = DictionaryToCreature(dict);
-			DisplayCreatureDetails(creature);
-		}
+		treeManager.OnEcosystemItemSelected(displayManager, uiManager);
 	}
 
-	private void DisplayCreatureDetails(Creature creature)
+	private void OnDeleteConfirmed()
 	{
-		if (speciesDetails == null)
-		{
-			GD.PrintErr("SpeciesDetails is null!");
-			return;
-		}
-		
-		string details = $"[b]{creature.Name}[/b]\n\n";
-		
-		// Basic Information
-		details += "[u]Basic Information[/u]\n";
-		details += $"Chemical Basis: {creature.ChemicalBasis}\n";
-		details += $"Habitat: {creature.Habitat}\n";
-		details += $"Trophic Level: {creature.TrophicLevel}\n";
-		details += $"Size: {creature.SizeCategory} (x{creature.GravitySizeMultiplier:F2} gravity modifier)\n\n";
-		
-		// Physical Characteristics
-		details += "[u]Physical Characteristics[/u]\n";
-		details += $"Symmetry: {creature.Symmetry}\n";
-		details += $"Number of Limbs: {creature.NumberOfLimbs}\n";
-		details += $"Manipulators: {creature.NumberOfManipulators}\n";
-		details += $"Locomotion: {creature.Locomotion}\n";
-		details += $"Skeleton Type: {creature.Skeleton}\n";
-		details += $"Skin: {creature.Skin}\n";
-		if (creature.TailFeatures != "None")
-		{
-			details += $"Tail Features: {creature.TailFeatures}\n";
-		}
-		details += "\n";
-		
-		// Senses
-		details += "[u]Senses[/u]\n";
-		details += $"{creature.Senses}\n\n";
-		
-		// Reproduction
-		details += "[u]Reproduction[/u]\n";
-		details += $"Growth Pattern: {creature.GrowthPattern}\n";
-		details += $"Sexes: {creature.Sexes}\n";
-		details += $"Gestation: {creature.Gestation}\n";
-		if (!string.IsNullOrEmpty(creature.SpecialGestation))
-		{
-			details += $"Special Gestation: {creature.SpecialGestation}\n";
-		}
-		details += $"Reproductive Strategy: {creature.ReproductiveStrategy}\n\n";
-		
-		// Intelligence and Behavior
-		details += "[u]Intelligence and Behavior[/u]\n";
-		details += $"Intelligence Level: {creature.AnimalIntelligence}\n";
-		details += "Mental Qualities:\n";
-		
-		// Split mental qualities into individual traits
-		var qualities = creature.MentalQualities.Split(',');
-		foreach (var quality in qualities)
-		{
-			details += $"  • {quality.Trim()}\n";
-		}
-
-		speciesDetails.Text = details;
-		GD.Print("Updated species details");
-	}
-	
-	private Creature DictionaryToCreature(Godot.Collections.Dictionary dict)
-	{
-		return new Creature
-		{
-			Name = dict["Name"].AsString(),
-			ChemicalBasis = dict["ChemicalBasis"].AsString(),
-			Habitat = dict["Habitat"].AsString(),
-			TrophicLevel = dict["TrophicLevel"].AsString(),
-			Locomotion = dict["Locomotion"].AsString(),
-			SizeCategory = dict["SizeCategory"].AsString(),
-			GravitySizeMultiplier = dict["GravitySizeMultiplier"].AsSingle(),
-			Symmetry = dict["Symmetry"].AsString(),
-			NumberOfLimbs = dict["NumberOfLimbs"].AsInt32(),
-			TailFeatures = dict["TailFeatures"].AsString(),
-			NumberOfManipulators = dict["NumberOfManipulators"].AsInt32(),
-			Skeleton = dict["Skeleton"].AsString(),
-			GrowthPattern = dict["GrowthPattern"].AsString(),
-			Sexes = dict["Sexes"].AsString(),
-			Gestation = dict["Gestation"].AsString(),
-			SpecialGestation = dict["SpecialGestation"].AsString(),
-			ReproductiveStrategy = dict["ReproductiveStrategy"].AsString(),
-			Skin = dict["Skin"].AsString(),
-			Senses = dict["Senses"].AsString(),
-			AnimalIntelligence = dict["AnimalIntelligence"].AsString(),
-			MentalQualities = dict["MentalQualities"].AsString()
-		};
+		treeManager.DeleteSelectedItem();
 	}
 }

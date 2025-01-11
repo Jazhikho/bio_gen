@@ -1,5 +1,7 @@
 using Godot;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using BioLibrary;
 using BioStructures;
 
@@ -29,108 +31,81 @@ public partial class ReproductionGenerator : Node
 
 	public void GenerateReproduction(Creature creature, SettingsManager.PlanetSettings settings)
 	{
-		creature.GrowthPattern = DetermineGrowthPattern(creature);
-		creature.Sexes = DetermineSexes(creature);
+		// Special case for machines
+		if (creature.ChemicalBasis == "Machine")
+		{
+			creature.Sexes = "Asexual reproduction or Parthenogenesis";
+			creature.Gestation = "Replication";
+			creature.SpecialGestation = null;
+			creature.ReproductiveStrategy = "Moderate r-Strategy";  // Default for machines
+			return;
+		}
+
+		creature.Sexes = DetermineSexes(creature, settings);
 		(creature.Gestation, creature.SpecialGestation) = DetermineGestation(creature, settings);
-		creature.ReproductiveStrategy = DetermineReproductiveStrategy(creature);
+		creature.ReproductiveStrategy = DetermineReproductiveStrategy(creature, settings);
 	}
 
-	private string DetermineGrowthPattern(Creature creature)
+	private string DetermineSexes(Creature creature, SettingsManager.PlanetSettings settings)
 	{
-		int growthRoll = Roll.Dice(2);
-		growthRoll += CalculateGrowthPatternModifiers(creature);
+		int roll = Roll.Dice(2, 6);
 		
-		return Roll.Seek(BioData.GrowthPattern(), growthRoll);
-	}
-
-	private int CalculateGrowthPatternModifiers(Creature creature)
-	{
-		int modifier = 0;
+		// Apply modifiers
+		if (creature.Locomotion == "immobile") roll -= 1;
+		if (creature.Symmetry == "Asymmetric") roll -= 1;
+		if (creature.TrophicLevel == "Photosynthetic" || creature.TrophicLevel == "Chemosynthetic") roll -= 1;
 		
-		if (creature.Skeleton == "External skeleton") modifier -= 1;
-		if (creature.SizeCategory == "Large") modifier += 1;
-		if (creature.Locomotion == "Immobile") modifier += 1;
-
-		return modifier;
-	}
-
-	private string DetermineSexes(Creature creature)
-	{
-		int sexRoll = Roll.Dice(2);
-		sexRoll += CalculateSexesModifiers(creature);
-		
-		return Roll.Seek(BioData.Sexes(), sexRoll);
-	}
-
-	private int CalculateSexesModifiers(Creature creature)
-	{
-		int modifier = 0;
-		
-		if (creature.Locomotion == "Immobile") modifier -= 1;
-		if (creature.Symmetry == "Asymmetric") modifier -= 1;
-		if (creature.TrophicLevel == "Autotroph" || 
-			creature.TrophicLevel == "Chemosynthetic" || 
-			creature.TrophicLevel == "Photosynthetic") 
-			modifier -= 1;
-
-		return modifier;
+		var sexesTable = BioData.Sexes();
+		return Roll.Seek(sexesTable, roll);
 	}
 
 	private (string gestation, string specialGestation) DetermineGestation(Creature creature, SettingsManager.PlanetSettings settings)
 	{
-		int gestationRoll = Roll.Dice(2);
-		gestationRoll += CalculateGestationModifiers(creature, settings);
+		// Basic gestation
+		int roll = Roll.Dice(2, 6);
 		
-		string gestation = Roll.Seek(BioData.Gestation(), gestationRoll);
+		// Apply modifiers
+		if (creature.Habitat.Contains("Ocean") || creature.Habitat == "Lake" || 
+			creature.Habitat == "River" || creature.Habitat == "Lagoon" || 
+			creature.Habitat == "Deep Ocean" || creature.Habitat == "Sea" || 
+			creature.Habitat == "Reef") roll -= 1;
+		if (creature.Locomotion == "immobile") roll -= 2;
+		if (creature.TemperatureRegulation == "Warm-blooded") roll += 1;
 		
-		// Check for special gestation
+		var gestationTable = BioData.Gestation();
+		string gestation = Roll.Seek(gestationTable, roll);
+
+		// Special gestation check
 		string specialGestation = null;
-		if (Roll.Dice(2) == 12)
+		int specialRoll = Roll.Dice(2, 6);
+		if (specialRoll == 12)
 		{
-			int specialRoll = Roll.Dice(1);
-			specialGestation = Roll.Seek(BioData.SpecialGestation(), specialRoll);
+			var specialGestationTable = BioData.SpecialGestation();
+			specialGestation = Roll.Seek(specialGestationTable, Roll.Dice(2, 6));
 		}
 
 		return (gestation, specialGestation);
 	}
 
-	private int CalculateGestationModifiers(Creature creature, SettingsManager.PlanetSettings settings)
+	private string DetermineReproductiveStrategy(Creature creature, SettingsManager.PlanetSettings settings)
 	{
-		int modifier = 0;
+		int roll = Roll.Dice(2, 6);
 		
-		if (creature.Locomotion == "Swimming" || creature.Locomotion == "Floating") modifier -= 1;
-		if (creature.Locomotion == "Immobile") modifier -= 2;
+		// Apply modifiers
+		if (creature.SizeCategory == "Large") roll -= 2;
+		if (creature.SizeCategory == "Small") roll += 1;
+		if (creature.Gestation == "Spawning/Pollinating") roll += 2;
 		
-		// Assuming we track temperature regulation. If not, we can remove this part
-		bool isWarmBlooded = DetermineIfWarmBlooded(creature, settings);
-		if (isWarmBlooded) modifier += 1;
+		var strategyTable = BioData.ReproductiveStrategy();
+		string strategy = Roll.Seek(strategyTable, roll);
 
-		return modifier;
-	}
+		// Calculate number of young per litter for spawning organisms
+		if (creature.Gestation == "Spawning/Pollinating")
+		{
+			int litterSize = Roll.Dice(2) * 10;  // 2d * 10
+			// This could be stored in a new Creature property if needed
+		}
 
-	private bool DetermineIfWarmBlooded(Creature creature, SettingsManager.PlanetSettings settings)
-	{
-		// This is a placeholder. In reality, this would be based on various factors
-		// If we're not tracking temperature regulation in the creature, we can remove this
-		return Roll.Dice(1) > 3;
-	}
-
-	private string DetermineReproductiveStrategy(Creature creature)
-	{
-		int strategyRoll = Roll.Dice(2);
-		strategyRoll += CalculateReproductiveStrategyModifiers(creature);
-		
-		return Roll.Seek(BioData.ReproductiveStrategy(), strategyRoll);
-	}
-
-	private int CalculateReproductiveStrategyModifiers(Creature creature)
-	{
-		int modifier = 0;
-		
-		if (creature.SizeCategory == "Large") modifier -= 2;
-		if (creature.SizeCategory == "Small") modifier += 1;
-		if (creature.Gestation == "Spawning") modifier += 2;
-
-		return modifier;
+		return strategy;
 	}
 }

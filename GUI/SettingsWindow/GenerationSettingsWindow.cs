@@ -3,6 +3,9 @@ using System;
 
 public partial class GenerationSettingsWindow : Window
 {
+	[Signal]
+	public delegate void SettingsConfirmedEventHandler();
+
 	private OptionButton planetTypeOption;
 	private SpinBox temperatureSpinBox;
 	private SpinBox hydrologySpinBox;
@@ -18,7 +21,6 @@ public partial class GenerationSettingsWindow : Window
 			SetupOptions();
 			ConnectSignals();
 			
-			// Check if SettingsManager.Instance exists before using it
 			if (SettingsManager.Instance != null)
 			{
 				UpdateUIFromSettings(SettingsManager.Instance.CurrentSettings);
@@ -42,14 +44,6 @@ public partial class GenerationSettingsWindow : Window
 		gravitySpinBox = GetNodeOrNull<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/GravitySpinBox");
 		landMassesSpinBox = GetNodeOrNull<SpinBox>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/LandMassesSpinBox");
 		chemistryOption = GetNodeOrNull<OptionButton>("MarginContainer/VBoxContainer/ScrollContainer/SettingsGrid/ChemistryOption");
-
-		// Verify all controls were found
-		if (planetTypeOption == null) GD.PrintErr("planetTypeOption not found");
-		if (temperatureSpinBox == null) GD.PrintErr("temperatureSpinBox not found");
-		if (hydrologySpinBox == null) GD.PrintErr("hydrologySpinBox not found");
-		if (gravitySpinBox == null) GD.PrintErr("gravitySpinBox not found");
-		if (landMassesSpinBox == null) GD.PrintErr("landMassesSpinBox not found");
-		if (chemistryOption == null) GD.PrintErr("chemistryOption not found");
 	}
 
 	private void SetupOptions()
@@ -107,7 +101,6 @@ public partial class GenerationSettingsWindow : Window
 
 	private void OnGeneratePressed()
 	{
-		// Update settings from UI
 		var settings = SettingsManager.Instance.CurrentSettings;
 		settings.Temperature = (float)temperatureSpinBox.Value;
 		settings.Hydrology = (float)hydrologySpinBox.Value;
@@ -115,7 +108,7 @@ public partial class GenerationSettingsWindow : Window
 		settings.LandMasses = (int)landMassesSpinBox.Value;
 		settings.PrimaryChemistry = (SettingsManager.PlanetSettings.ChemistryBasis)chemistryOption.Selected;
 
-		// Emit signal or call method to generate with these settings
+		EmitSignal(SignalName.SettingsConfirmed);
 		Hide();
 	}
 

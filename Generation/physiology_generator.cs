@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using BioLibrary;
 using BioStructures;
 
@@ -30,180 +31,334 @@ public partial class PhysiologyGenerator : Node
 
 	public void GeneratePhysiology(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
-		creature.ChemicalBasis = DetermineChemicalBasis(settings);
-		creature.SizeCategory = DetermineSizeCategory(settings, habitatInfo);
-		creature.GravitySizeMultiplier = CalculateGravitySizeMultiplier(settings.Gravity, habitatInfo.zone);
-		
-		DetermineBodyStructure(creature, habitatInfo);
-		DetermineExternalFeatures(creature, settings, habitatInfo);
-		DetermineBreathingAndTemperature(creature, settings, habitatInfo);
-	}
-
-	private string DetermineChemicalBasis(SettingsManager.PlanetSettings settings)
-	{
-		return Roll.Seek(BioData.Chemical_Basis());
-	}
-
-	private string DetermineSizeCategory(SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		int sizeRoll = Roll.Dice(1);
-		sizeRoll += CalculateSizeModifiers(settings, habitatInfo);
-
-		if (sizeRoll <= 2) return "Small";
-		if (sizeRoll <= 4) return "Medium";
-		return "Large";
-	}
-
-	private int CalculateSizeModifiers(SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		int modifier = 0;
-
-		// Gravity modifiers
-		if (settings.Gravity <= 0.4f) modifier += 2;
-		else if (settings.Gravity <= 0.75f) modifier += 1;
-		else if (settings.Gravity >= 1.5f && settings.Gravity < 2f) modifier -= 1;
-		else if (settings.Gravity >= 2f) modifier -= 2;
-
-		// Habitat modifiers
-		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) modifier += 1;
-		switch (habitatInfo.habitat)
+		try
 		{
-			case "Ocean":
-			case "Banks":
-			case "Plains":
-				modifier += 1;
-				break;
-			case "Lagoon":
-			case "River":
-			case "Beach":
-			case "Desert":
-			case "Mountain":
-				modifier -= 1;
-				break;
+			// Body Structure
+			DetermineBodyStructure(creature, settings, habitatInfo);
+			DetermineExternalFeatures(creature, settings, habitatInfo);
+			DetermineBreathing(creature, settings, habitatInfo);
+			DetermineTemperatureRegulation(creature, settings, habitatInfo);
+			DetermineGrowthPattern(creature, settings, habitatInfo);
 		}
-
-		return modifier;
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error in GeneratePhysiology: {e.Message}\n{e.StackTrace}");
+		}
 	}
 
-	private float CalculateGravitySizeMultiplier(float gravity, HabitatGenerator.HabitatZone zoneType)
-	{
-		if (zoneType == HabitatGenerator.HabitatZone.Water) return 1.0f;
-		return Roll.Search(BioData.GravitySizeMultiplier(), gravity);
-	}
-
-	private void DetermineBodyStructure(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	private void DetermineBodyStructure(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
 		// Symmetry
-		int symmetryRoll = Roll.Dice(2);
-		if (habitatInfo.zone == HabitatGenerator.HabitatZone.GasGiant) symmetryRoll += 1;
-		creature.Symmetry = Roll.Seek(BioData.Symmetry(), symmetryRoll);
+		int symmetryRoll = Roll.Dice(2, 6);
+		var symmetryTable = BioData.Symmetry();
+		creature.Symmetry = Roll.Seek(symmetryTable, symmetryRoll);
 
-		// Number of Limbs
-		creature.NumberOfLimbs = DetermineNumberOfLimbs(creature.Symmetry);
+		// Additional rolls for Radial and Spherical symmetry
+		if (creature.Symmetry == "Radial")
+		{
+			creature.SymmetryNumber = Roll.Dice(1) + 3;  // 1d+3 sides
+		}
+		else if (creature.Symmetry == "Spherical")
+		{
+			int roll = Roll.Dice(1);
+			creature.SymmetryNumber = roll switch
+			{
+				1 => 4,
+				2 or 3 => 6,
+				4 => 8,
+				5 => 12,
+				_ => 20
+			};
+		}
+
+		// Limb Structure and count
+		DetermineLimbsBasedOnSymmetry(creature);
 
 		// Skeleton
-		int skeletonRoll = Roll.Dice(2);
-		skeletonRoll += CalculateSkeletonModifiers(creature, habitatInfo);
-		creature.Skeleton = Roll.Seek(BioData.Skeleton(), skeletonRoll);
+		int skeletonRoll = Roll.Dice(2, 6);
+		var skeletonTable = BioData.Skeleton();
+		creature.Skeleton = Roll.Seek(skeletonTable, skeletonRoll);
 
 		// Manipulators
-		creature.NumberOfManipulators = DetermineNumberOfManipulators(creature, habitatInfo);
+		DetermineManipulators(creature);
 	}
 
-	private int DetermineNumberOfLimbs(string symmetry)
+	private void DetermineLimbsBasedOnSymmetry(Creature creature)
 	{
-		switch (symmetry)
+		var limbTable = BioData.NumberOfLimbs();
+		
+		if (creature.Symmetry == "Spherical")
 		{
-			case "Asymmetric":
-				return Math.Max(0, Roll.Dice(2) - 2);
-			case "Spherical":
-				return 1; // One limb per side, actual number determined by renderer
-			default:
-				int segmentRoll = Roll.Dice(2);
-				if (symmetry == "Trilateral") segmentRoll -= 1;
-				if (symmetry == "Radial") segmentRoll -= 2;
-				
-				if (segmentRoll <= 2) return 1;
-				if (segmentRoll <= 4) return 2;
-				return Roll.Dice(segmentRoll - 4);
+			// Spherical: one limb per side
+			creature.LimbStructure = "One segment";
+			creature.ActualLimbCount = creature.SymmetryNumber ?? 0;
+		}
+		else if (creature.Symmetry == "Asymmetric")
+		{
+			// Asymmetric: 2d-2 limbs
+			creature.LimbStructure = "Asymmetric";
+			creature.ActualLimbCount = Math.Max(0, Roll.Dice(2) - 2);
+		}
+		else
+		{
+			// Bilateral, Trilateral, or Radial
+			int limbRoll = Roll.Dice(2, 6);
+			limbRoll += creature.Symmetry switch
+			{
+				"Trilateral" => -1,
+				"Radial" => -2,
+				_ => 0
+			};
+			
+			creature.LimbStructure = Roll.Seek(limbTable, limbRoll);
+			
+			// Calculate actual limbs based on structure and symmetry
+			int segmentCount = creature.LimbStructure switch
+			{
+				"Limbless" => 0,
+				"One segment" => 1,
+				"Two segments" => 2,
+				"1d segments" => Roll.Dice(1),
+				"2d segments" => Roll.Dice(2),
+				"3d segments" => Roll.Dice(3),
+				_ => 0
+			};
+
+			int multiplier = creature.Symmetry switch
+			{
+				"Bilateral" => 2,
+				"Trilateral" => 3,
+				"Radial" => creature.SymmetryNumber ?? 0,
+				_ => 1
+			};
+
+			creature.ActualLimbCount = segmentCount * multiplier;
 		}
 	}
 
-	private int CalculateSkeletonModifiers(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	private void DetermineManipulators(Creature creature)
 	{
-		int modifier = 0;
+		if (creature.ActualLimbCount == 0)
+		{
+			creature.ManipulatorType = "No manipulators";
+			creature.ActualManipulatorCount = 0;
+			return;
+		}
+
+		int manipulatorRoll = Roll.Dice(2, 6);
 		
-		if (creature.SizeCategory == "Medium") modifier += 1;
-		if (creature.SizeCategory == "Large") modifier += 2;
-		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Land) modifier += 1;
-		if (creature.Symmetry == "Asymmetric") modifier -= 1;
-
-		return modifier;
-	}
-
-	private int DetermineNumberOfManipulators(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		int manipulatorRoll = Roll.Dice(2);
-		manipulatorRoll += CalculateManipulatorModifiers(creature, habitatInfo);
+		// Apply modifiers
+		if (creature.ActualLimbCount == 2) manipulatorRoll -= 1;
+		else if (creature.ActualLimbCount > 4) manipulatorRoll += 1;
+		if (creature.ActualLimbCount > 6) manipulatorRoll += 1;
 		
-		var result = Roll.Seek(BioData.NumberOfManipulators(), manipulatorRoll);
-		return int.TryParse(result, out int number) ? number : 0;
-	}
+		if (creature.Locomotion == "winged flight" || creature.Locomotion == "gliding") manipulatorRoll -= 1;
+		if (creature.Locomotion == "swimming" && 
+			(creature.Habitat == "Ocean" || creature.Habitat == "Deep Ocean" || creature.Habitat == "Jovian"))
+			manipulatorRoll -= 2;
+		if (creature.Locomotion == "brachiating") manipulatorRoll += 2;
+		if (creature.TrophicLevel == "Gathering Herbivore") manipulatorRoll += 1;
 
-	private int CalculateManipulatorModifiers(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
-	{
-		int modifier = 0;
-		
-		if (creature.NumberOfLimbs == 2) modifier -= 1;
-		if (creature.NumberOfLimbs > 4) modifier += 1;
-		if (creature.NumberOfLimbs > 6) modifier += 1;
-		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water || 
-			habitatInfo.zone == HabitatGenerator.HabitatZone.GasGiant) modifier -= 2;
+		var manipulatorTable = BioData.NumberOfManipulators();
+		creature.ManipulatorType = Roll.Seek(manipulatorTable, manipulatorRoll);
 
-		return modifier;
+		// Calculate actual manipulator count
+		int manipulatorMultiplier = creature.Symmetry switch
+		{
+			"Bilateral" => 2,
+			"Trilateral" => 3,
+			"Radial" => creature.SymmetryNumber ?? 0,
+			"Spherical" => creature.SymmetryNumber ?? 0,
+			"Asymmetric" => 1,
+			_ => 1
+		};
+
+		// Determine number of sets based on ManipulatorType
+		int sets = creature.ManipulatorType switch
+		{
+			"No manipulators" => 0,
+			"1 set of manipulators, Bad Grip" => 1,
+			"Prehensile tail or trunk" => 1,
+			"1 set of manipulators with normal Grip" => 1,
+			"2 sets of manipulators" => 2,
+			"1d sets of manipulators" => Roll.Dice(1),
+			_ => 0
+		};
+
+		creature.ActualManipulatorCount = sets * manipulatorMultiplier;
+
+		// Special case for prehensile tail additional check
+		if (creature.ManipulatorType == "Prehensile tail or trunk" && Roll.Dice(1) == 6)
+		{
+			// Roll again for additional manipulators
+			manipulatorRoll = Roll.Dice(2, 6);
+			string additionalType = Roll.Seek(manipulatorTable, manipulatorRoll);
+			DetermineManipulators(creature); // Recursive call to add more manipulators
+		}
+
+		// Ensure manipulator count doesn't exceed limb count
+		creature.ActualManipulatorCount = Math.Min(creature.ActualManipulatorCount, creature.ActualLimbCount);
 	}
 
 	private void DetermineExternalFeatures(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
-		// Tail
-		if (creature.Symmetry != "Spherical" && (Roll.Dice(1) + (habitatInfo.zone == HabitatGenerator.HabitatZone.Water ? 1 : 0)) >= 5)
-		{
-			int tailRoll = Roll.Dice(2);
-			creature.TailFeatures = Roll.Seek(BioData.TailFeatures(), tailRoll);
-		}
-		else
-		{
-			creature.TailFeatures = "None";
-		}
+		// Tail Features
+		DetermineTailFeatures(creature, habitatInfo);
 
 		// Skin
 		DetermineSkin(creature, settings, habitatInfo);
 	}
 
+	private void DetermineTailFeatures(Creature creature, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	{
+		if (creature.Symmetry == "Spherical")
+		{
+			creature.TailFeatures = "None";
+			return;
+		}
+
+		int tailRoll = Roll.Dice(1);
+		if (creature.Locomotion == "swimming") tailRoll += 1;
+		
+		if (tailRoll >= 5)
+		{
+			int featureRoll = Roll.Dice(2, 6);
+			var tailTable = BioData.TailFeatures();
+			creature.TailFeatures = Roll.Seek(tailTable, featureRoll);
+			
+			// Handle combination
+			if (creature.TailFeatures == "Combination")
+			{
+				List<string> combinedFeatures = new List<string>();
+				for (int i = 0; i < 2; i++)
+				{
+					int combinationRoll = Roll.Dice(1) + 5;
+					string feature = Roll.Seek(tailTable, combinationRoll);
+					if (feature != "Combination" && !combinedFeatures.Contains(feature))
+						combinedFeatures.Add(feature);
+				}
+				creature.TailFeatures = string.Join(", ", combinedFeatures);
+			}
+		}
+		else
+		{
+			creature.TailFeatures = "No features";
+		}
+	}
+
 	private void DetermineSkin(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
-		string coveringType = Roll.Seek(BioData.Skin()["Covering"]);
+		// Roll 1d6 for covering type
+		int coveringRoll = Roll.Dice(1, 6);
 		
-		int skinRoll = Roll.Dice(2);
-		skinRoll += CalculateSkinModifiers(coveringType, settings, habitatInfo);
+		// Force exoskeleton if creature has external skeleton
+		if (creature.Skeleton == "External skeleton")
+		{
+			creature.SkinCovering = "Exoskeleton";
+		}
+		else
+		{
+			var coveringTable = BioData.Skin()["Covering"];
+			creature.SkinCovering = Roll.Seek(coveringTable, coveringRoll);
+		}
 		
-		creature.Skin = Roll.Seek(BioData.Skin()[coveringType], skinRoll);
+		// Roll for specific skin type
+		int skinTypeRoll = Roll.Dice(2, 6);
+		
+		// Apply modifiers based on covering type
+		switch (creature.SkinCovering)
+		{
+			case "Skin":
+				if (habitatInfo.habitat == "Arctic") skinTypeRoll += 1;
+				if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) skinTypeRoll += 1;
+				if (habitatInfo.habitat == "Desert") skinTypeRoll -= 1;
+				if ((creature.TrophicLevel ?? "").Contains("Herbivore")) skinTypeRoll += 1;
+				if (creature.Locomotion == "winged flight") skinTypeRoll -= 5;
+				break;
+			case "Scales":
+				if (habitatInfo.habitat == "Desert") skinTypeRoll += 1;
+				if ((creature.TrophicLevel ?? "").Contains("Herbivore")) skinTypeRoll += 1;
+				if (creature.Locomotion == "winged flight") skinTypeRoll -= 2;
+				if (creature.Locomotion == "digging") skinTypeRoll -= 1;
+				break;
+			case "Fur":
+				if (habitatInfo.habitat == "Desert") skinTypeRoll -= 1;
+				if (habitatInfo.habitat == "Arctic") skinTypeRoll += 1;
+				if (creature.Locomotion == "winged flight") skinTypeRoll -= 1;
+				if ((creature.TrophicLevel ?? "").Contains("Herbivore")) skinTypeRoll += 1;
+				break;
+			case "Feathers":
+				if (habitatInfo.habitat == "Desert") skinTypeRoll -= 1;
+				if (habitatInfo.habitat == "Arctic") skinTypeRoll += 1;
+				if (creature.Locomotion == "winged flight") skinTypeRoll += 1;
+				break;
+			case "Exoskeleton":
+				skinTypeRoll = Roll.Dice(1, 6); // Use 1d6 for exoskeleton
+				if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) skinTypeRoll += 1;
+				if (creature.Locomotion == "immobile") skinTypeRoll += 1;
+				if (creature.Locomotion == "winged flight") skinTypeRoll -= 2;
+				break;
+		}
+		
+		var skinTypeTable = BioData.Skin()[creature.SkinCovering];
+		creature.SkinType = Roll.Seek(skinTypeTable, skinTypeRoll);
 	}
-
-	private int CalculateSkinModifiers(string coveringType, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	
+	private void DetermineBreathing(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
-		int modifier = 0;
+		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Land || creature.Locomotion == "winged flight")
+		{
+			creature.BreathingMethod = "Air-breathing";
+			return;
+		}
 		
-		if (habitatInfo.habitat == "Arctic") modifier += 1;
-		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Water) modifier += 1;
-		if (habitatInfo.habitat == "Desert") modifier -= 1;
-
-		return modifier;
+		if (habitatInfo.habitat == "Deep Ocean")
+		{
+			creature.BreathingMethod = "Water-breathing (Gills)";
+			return;
+		}
+		
+		// For other water dwellers, roll 2d6
+		int breathingRoll = Roll.Dice(2, 6);
+		
+		// Apply modifiers
+		if (new[] {"Arctic", "Swampland", "River", "Beach", "Lagoon"}.Contains(habitatInfo.habitat)) breathingRoll += 1;
+		if (creature.Locomotion == "walking") breathingRoll += 1;
+		if (new[] {"winged flight", "climbing"}.Contains(creature.Locomotion)) breathingRoll += 2;
+		
+		creature.BreathingMethod = breathingRoll >= 8 ? "Air-breathing" : "Water-breathing (Gills)";
 	}
-
-	private void DetermineBreathingAndTemperature(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	
+	private void DetermineTemperatureRegulation(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
 	{
-		// This would be implemented if we need to track breathing method and temperature regulation
-		// For now, we'll skip it as it's not in the Creature class
+		int tempRoll = Roll.Dice(2, 6);
+		
+		// Apply modifiers
+		if ((creature.BreathingMethod ?? "").Contains("Air")) tempRoll += 1;
+		if ((creature.BreathingMethod ?? "").Contains("Water")) tempRoll -= 1;
+		if (creature.SizeCategory != "Small") tempRoll += 1;
+		if (habitatInfo.zone == HabitatGenerator.HabitatZone.Land) tempRoll += 1;
+		if (habitatInfo.habitat == "Woodland" || habitatInfo.habitat == "Mountain") tempRoll += 1;
+		if (habitatInfo.habitat == "Arctic") tempRoll += 2;
+		
+		if (tempRoll >= 10)
+			creature.TemperatureRegulation = "Warm-blooded";
+		else if (tempRoll >= 7)
+			creature.TemperatureRegulation = "Variable Temperature";
+		else
+			creature.TemperatureRegulation = "Cold-blooded";
+	}
+	
+	private void DetermineGrowthPattern(Creature creature, SettingsManager.PlanetSettings settings, (string habitat, HabitatGenerator.HabitatZone zone) habitatInfo)
+	{
+		int growthRoll = Roll.Dice(2, 6);
+		
+		// Apply modifiers
+		if (creature.Skeleton == "External skeleton") growthRoll -= 1;
+		if (creature.SizeCategory == "Large") growthRoll += 1;
+		if (creature.Locomotion == "immobile") growthRoll += 1;
+		
+		var growthTable = BioData.GrowthPattern();
+		creature.GrowthPattern = Roll.Seek(growthTable, growthRoll);
 	}
 }

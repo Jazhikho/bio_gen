@@ -28,23 +28,54 @@ public partial class GenerationManager : Node
 		}
 	}
 
-	public Creature GenerateSingleSpecies(SettingsManager.PlanetSettings settings = null, string specificHabitat = null)
+	public Planet GeneratePlanet(SettingsManager.PlanetSettings settings = null)
+	{
+		try
+		{
+			return PlanetGenerator.Instance.GeneratePlanet(settings);
+		}
+		catch (Exception e)
+		{
+			GD.PrintErr($"Error in GeneratePlanet: {e.Message}\n{e.StackTrace}");
+			return null;
+		}
+	}
+
+	public Creature GenerateSingleSpecies(SettingsManager.PlanetSettings settings, Ecosystem targetEcosystem)
 	{
 		try
 		{
 			settings ??= GetDefaultSettings();
 			
-			var habitatInfo = HabitatGenerator.Instance.DetermineHabitat(settings, specificHabitat);
 			var creature = new Creature();
+			creature.Habitat = targetEcosystem.HabitatType;
 			
+			var habitatZone = HabitatGenerator.Instance.DetermineHabitatZone(targetEcosystem.HabitatType);
+			var habitatInfo = (targetEcosystem.HabitatType, habitatZone);
+			
+			// Set chemical basis first
+			creature.ChemicalBasis = settings.PrimaryChemistry.ToString().Replace("Based", "-Based");
+
+			GD.Print("Generating trophic level...");
+			TrophicGenerator.Instance.GenerateTrophicLevel(creature, settings, habitatInfo);
+
+			GD.Print("Generating locomotion...");
+			LocomotionGenerator.Instance.GenerateLocomotion(creature, settings, habitatInfo);
+
+			GD.Print("Generating size...");
+			SizeGenerator.Instance.GenerateSize(creature, settings, habitatInfo);
+
 			GD.Print("Generating physiology...");
 			PhysiologyGenerator.Instance.GeneratePhysiology(creature, settings, habitatInfo);
 			
-			GD.Print("Generating behavior...");
-			BehaviorGenerator.Instance.GenerateBehavior(creature, habitatInfo);
-			
 			GD.Print("Generating reproduction...");
 			ReproductionGenerator.Instance.GenerateReproduction(creature, settings);
+
+			GD.Print("Generating senses...");
+			SensesGenerator.Instance.GenerateSenses(creature, settings, habitatInfo);
+			
+			GD.Print("Generating behavior...");
+			BehaviorGenerator.Instance.GenerateBehavior(creature, settings, habitatInfo);
 			
 			GD.Print("Naming creature...");
 			NamingGenerator.Instance.NameCreature(creature);
@@ -58,18 +89,6 @@ public partial class GenerationManager : Node
 		}
 	}
 
-	public Ecosystem[] GenerateMultipleSpecies(int count, SettingsManager.PlanetSettings settings = null)
-	{
-		settings ??= GetDefaultSettings();
-		
-		var habitats = HabitatGenerator.Instance.DetermineAvailableHabitats(settings);
-		var ecosystems = InitializeEcosystems(habitats);
-		
-		PopulateEcosystems(ecosystems, count, settings);
-		
-		return ConvertToEcosystemArray(ecosystems);
-	}
-
 	private SettingsManager.PlanetSettings GetDefaultSettings()
 	{
 		if (SettingsManager.Instance == null)
@@ -81,35 +100,5 @@ public partial class GenerationManager : Node
 		var settings = new SettingsManager.PlanetSettings();
 		SettingsManager.Instance.SetPresetSettings(SettingsManager.PlanetType.Gaian);
 		return settings;
-	}
-
-	private Dictionary<string, List<Creature>> InitializeEcosystems(List<string> habitats)
-	{
-		return habitats.ToDictionary(h => h, h => new List<Creature>());
-	}
-
-	private void PopulateEcosystems(Dictionary<string, List<Creature>> ecosystems, int totalCount, SettingsManager.PlanetSettings settings)
-	{
-		int habitatCount = ecosystems.Count;
-		foreach (var habitat in ecosystems.Keys)
-		{
-			int habitatSpeciesCount = totalCount / habitatCount;
-			for (int i = 0; i < habitatSpeciesCount; i++)
-			{
-				var creature = GenerateSingleSpecies(settings, habitat);
-				ecosystems[habitat].Add(creature);
-			}
-		}
-	}
-
-	private Ecosystem[] ConvertToEcosystemArray(Dictionary<string, List<Creature>> ecosystems)
-	{
-		return ecosystems.Select(kvp => new Ecosystem
-		{
-			HabitatType = kvp.Key,
-			Creatures = kvp.Value.ToArray(),
-			EcosystemID = Roll.Dice(3, 6),
-			LocationID = Roll.Dice(3, 6)
-		}).ToArray();
 	}
 }

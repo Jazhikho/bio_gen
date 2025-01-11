@@ -12,7 +12,7 @@ public partial class HabitatGenerator : Node
 	{
 		Land,
 		Water,
-		GasGiant
+		Jovian
 	}
 
 	public override void _EnterTree()
@@ -35,146 +35,106 @@ public partial class HabitatGenerator : Node
 		}
 	}
 
-	public (string habitat, HabitatZone zone) DetermineHabitat(SettingsManager.PlanetSettings settings, string specificHabitat = null)
+	public (string habitat, HabitatZone zone) DetermineHabitat(SettingsManager.PlanetSettings settings, HabitatZone? preferredZone = null)
 	{
-		if (specificHabitat != null)
-		{
-			return (specificHabitat, DetermineHabitatZone(specificHabitat));
-		}
-
+		// Special case for gas giants
 		if (settings.PlanetType == SettingsManager.PlanetType.Jovian)
 		{
 			return DetermineGasGiantHabitat();
 		}
 
-		HabitatZone zone = DetermineHabitatZone(settings);
-		string habitat = DetermineSpecificHabitat(zone, settings);
-
-		return (habitat, zone);
-	}
-
-	private HabitatZone DetermineHabitatZone(SettingsManager.PlanetSettings settings)
-	{
-		int zoneRoll = Roll.Dice(1, 6);
-		int modifier = CalculateHydrologyModifier(settings.Hydrology);
+		// Determine zone if not specified
+		HabitatZone selectedZone = preferredZone ?? DetermineZoneBasedOnSettings(settings);
+		if (selectedZone == HabitatZone.Jovian)
+		{
+			selectedZone = settings.Hydrology > 50 ? HabitatZone.Water : HabitatZone.Land;
+		}
 		
-		zoneRoll += modifier;
+		// Get habitat for the determined zone
+		string habitat = DetermineSpecificHabitat(selectedZone, settings);
 
-		if (zoneRoll <= 3)
-			return HabitatZone.Land;
-		else
-			return HabitatZone.Water;
+		return (habitat, selectedZone);
 	}
 
-	private int CalculateHydrologyModifier(float hydrology)
+	private HabitatZone DetermineZoneBasedOnSettings(SettingsManager.PlanetSettings settings)
 	{
-		if (hydrology <= 10) return -2;
-		if (hydrology <= 50) return -1;
-		if (hydrology >= 90) return 2;
-		if (hydrology >= 80) return 1;
-		return 0;
+		// Handle extreme cases
+		if (settings.Hydrology == 0) return HabitatZone.Land;
+		if (settings.Hydrology == 100) return HabitatZone.Water;
+
+		// Roll d6 and apply hydrology modifiers
+		int roll = Roll.Dice(1, 6);
+		if (settings.Hydrology <= 10) roll -= 2;
+		else if (settings.Hydrology <= 30) roll -= 1;
+		else if (settings.Hydrology >= 90) roll += 2;
+		else if (settings.Hydrology >= 70) roll += 1;
+
+		return roll <= 3 ? HabitatZone.Land : HabitatZone.Water;
 	}
 
 	private string DetermineSpecificHabitat(HabitatZone zone, SettingsManager.PlanetSettings settings)
 	{
-		var habitats = BioData.Habitats();
-		var availableHabitats = GetAvailableHabitats(zone, settings);
+		// Get base roll (3d6)
+		int roll = Roll.Dice();
 
-		if (!availableHabitats.Any())
+		// Apply hydrology modifiers to the roll
+		if (settings.Hydrology <= 10) roll -= 2;
+		else if (settings.Hydrology <= 50) roll -= 1;
+		else if (settings.Hydrology >= 90) roll += 2;
+		else if (settings.Hydrology >= 80) roll += 1;
+
+		// Get habitat table for the zone
+		var habitatTable = BioData.Habitats()[zone.ToString()];
+		
+		// Find appropriate habitat based on roll
+		foreach (var habitat in habitatTable.OrderBy(h => h.Value))
 		{
-			return zone == HabitatZone.Land ? "Plain" : "Sea";
+			if (roll <= habitat.Value && IsHabitatViable(habitat.Key, settings))
+			{
+				return habitat.Key;
+			}
 		}
 
-		return Roll.Seek(availableHabitats.ToDictionary(h => h, h => habitats[zone.ToString()][h]));
+		// Default habitats if no match found
+		return zone == HabitatZone.Land ? "Plain" : "Sea";
 	}
 
 	private (string habitat, HabitatZone zone) DetermineGasGiantHabitat()
 	{
-		var habitats = BioData.Habitats()["Water"];
-		return (Roll.Seek(habitats), HabitatZone.GasGiant);
-	}
-
-	private List<string> GetAvailableHabitats(HabitatZone zone, SettingsManager.PlanetSettings settings)
-	{
-		var allHabitats = BioData.Habitats()[zone.ToString()];
-		return allHabitats.Keys.Where(h => IsHabitatViable(h, settings)).ToList();
-	}
-
-	public List<string> DetermineAvailableHabitats(SettingsManager.PlanetSettings settings)
-	{
-		var availableHabitats = new List<string>();
-		
-		if (settings.PlanetType == SettingsManager.PlanetType.Jovian)
-		{
-			return BioData.Habitats()["Water"].Keys.ToList();
-		}
-
-		foreach (var zoneStr in new[] { "Land", "Water" })
-		{
-			var zoneHabitats = BioData.Habitats()[zoneStr];
-			foreach (var habitat in zoneHabitats.Keys)
-			{
-				if (IsHabitatViable(habitat, settings))
-				{
-					availableHabitats.Add(habitat);
-				}
-			}
-		}
-
-		// Handle edge cases
-		if (settings.Hydrology == 0)
-		{
-			availableHabitats.RemoveAll(h => h != "Sea" && h != "Lake" && h != "River");
-		}
-		else if (settings.Hydrology == 100)
-		{
-			availableHabitats.RemoveAll(h => BioData.Habitats()["Land"].ContainsKey(h) && h != "Beach");
-		}
-
-		return availableHabitats;
+		var habitats = BioData.Habitats()["Jovian"];
+		return (Roll.Seek(habitats), HabitatZone.Jovian);
 	}
 
 	private bool IsHabitatViable(string habitat, SettingsManager.PlanetSettings settings)
 	{
-		switch (habitat)
+		switch (habitat.ToLower())
 		{
-			case "Arctic":
-				return settings.Temperature < 273;
-			case "Desert":
-				return settings.Temperature > 300 && settings.Hydrology < 20;
-			case "Beach":
-				return settings.Hydrology > 0;
-			case "Woodland":
-				return settings.Temperature is >= 278 and <= 298 && settings.Hydrology is >= 30 and <= 80;
-			case "Swampland":
-				return settings.Temperature > 283 && settings.Hydrology > 60;
-			case "Mountain":
-				return settings.Hydrology < 90;
-			case "Plain":
-				return settings.Temperature is >= 278 and <= 308 && settings.Hydrology is >= 10 and <= 70;
-			case "Jungle":
-				return settings.Temperature > 293 && settings.Hydrology > 50;
-			case "Ocean":
-			case "Deep Ocean":
-			case "Sea":
-				return settings.Hydrology > 50;
-			case "Lake":
-			case "River":
-				return settings.Hydrology > 10;
-			case "Lagoon":
-				return settings.Hydrology > 40 && settings.Temperature > 288;
-			case "Reef":
-				return settings.Hydrology > 60 && settings.Temperature > 293;
-			default:
-				return true;
+			case "arctic": return settings.Temperature < 273;
+			case "desert": return settings.Temperature > 300 && settings.Hydrology < 20;
+			case "beach": return settings.Hydrology > 0 && settings.Hydrology < 100;
+			case "woodland": return settings.Temperature is >= 278 and <= 298 && 
+								  settings.Hydrology is >= 30 and <= 80;
+			case "swampland": return settings.Temperature > 283 && settings.Hydrology > 60;
+			case "mountain": return settings.Hydrology < 90;
+			case "plain": return settings.Temperature is >= 278 and <= 308 && 
+							   settings.Hydrology is >= 10 and <= 70;
+			case "jungle": return settings.Temperature > 293 && settings.Hydrology > 50;
+			case "ocean":
+			case "deep ocean":
+			case "sea": return settings.Hydrology > 50;
+			case "lake":
+			case "river": return settings.Hydrology > 10;
+			case "lagoon": return settings.Hydrology > 40 && settings.Temperature > 288;
+			case "reef": return settings.Hydrology > 60 && settings.Temperature > 293;
+			default: return true;
 		}
 	}
 
-	private HabitatZone DetermineHabitatZone(string habitat)
+	public HabitatZone DetermineHabitatZone(string habitat)
 	{
 		var habitats = BioData.Habitats();
-		if (habitats["Water"].ContainsKey(habitat))
-			return HabitatZone.Water;
+		if (habitats["Water"].ContainsKey(habitat)) return HabitatZone.Water;
+		if (habitats["Jovian"].ContainsKey(habitat)) return HabitatZone.Jovian;
 		return HabitatZone.Land;
 	}
 }

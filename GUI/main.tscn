@@ -50,7 +50,7 @@ layout_mode = 2
 disabled = true
 text = "Delete Entry"
 
-[node name="Open File" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
+[node name="OpenFileButton" type="Button" parent="GUI/MenuPanel/ButtonContainer"]
 layout_mode = 2
 text = "Open File"
 
@@ -80,12 +80,13 @@ grow_vertical = 2
 layout_mode = 2
 split_offset = 300
 
-[node name="SpeciesList" type="ItemList" parent="GUI/ContentPanel/MarginContainer/VSplitContainer"]
+[node name="EcosystemTree" type="Tree" parent="GUI/ContentPanel/MarginContainer/VSplitContainer"]
 custom_minimum_size = Vector2(0, 400)
 layout_mode = 2
 
 [node name="SpeciesDetails" type="RichTextLabel" parent="GUI/ContentPanel/MarginContainer/VSplitContainer"]
 layout_mode = 2
+bbcode_enabled = true
 
 [node name="GenerationSettingsWindow" parent="." instance=ExtResource("2_8ecfm")]
 visible = false

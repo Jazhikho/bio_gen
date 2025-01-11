@@ -23,7 +23,7 @@ public static class Roll
 		return amount * fudge;
 	}
 
-	public static string Seek(Dictionary<string, int> items, int? roll = null)
+	public static T Seek<T>(Dictionary<T, int> items, int? roll = null)
 	{
 		if (roll == null) roll = Dice();
 

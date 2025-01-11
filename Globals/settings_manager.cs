@@ -1,6 +1,8 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using BioLibrary;
 
 public partial class SettingsManager : Node
 {
@@ -40,6 +42,91 @@ public partial class SettingsManager : Node
 		public float RadiationLevel { get; set; } = 1.0f; // 1.0 = Earth normal
 		public bool HasSeasonalCycles { get; set; } = true;
 		public float TectonicActivity { get; set; } = 1.0f; // 1.0 = Earth normal
+
+		public List<string> ValidHabitats => CalculateValidHabitats();
+		public Dictionary<string, int> ChemistryWeights => CalculateChemistryWeights();
+		public Dictionary<string, float> ValidSizeMultipliers => CalculateValidSizeMultipliers();
+
+		private List<string> CalculateValidHabitats()
+		{
+			var allHabitats = BioData.Habitats();
+			return allHabitats.SelectMany(zone => zone.Value.Keys)
+							 .Where(habitat => IsHabitatViableForPlanet(habitat))
+							 .ToList();
+		}
+
+		private bool IsHabitatViableForPlanet(string habitat)
+		{
+			switch (habitat.ToLower())
+			{
+				case "arctic":
+					return Temperature < 273;
+				case "desert":
+					return Temperature > 300 && Hydrology < 20;
+				case "beach":
+					return Hydrology > 0 && Hydrology < 100;
+				case "woodland":
+					return Temperature is >= 278 and <= 298 && Hydrology is >= 30 and <= 80;
+				case "swampland":
+					return Temperature > 283 && Hydrology > 60;
+				case "mountain":
+					return Hydrology < 90;
+				case "plain":
+					return Temperature is >= 278 and <= 308 && Hydrology is >= 10 and <= 70;
+				case "jungle":
+					return Temperature > 293 && Hydrology > 50;
+				case "ocean":
+				case "deep ocean":
+				case "sea":
+					return Hydrology > 50;
+				case "lake":
+				case "river":
+					return Hydrology > 10;
+				case "lagoon":
+					return Hydrology > 40 && Temperature > 288;
+				case "reef":
+					return Hydrology > 60 && Temperature > 293;
+				default:
+					return true;
+			}
+		}
+
+		private Dictionary<string, int> CalculateChemistryWeights()
+		{
+			var baseWeights = BioData.Chemical_Basis();
+			var adjustedWeights = new Dictionary<string, int>(baseWeights);
+			
+			if (Temperature > 350)
+			{
+				if (adjustedWeights.ContainsKey("Carbon-Based"))
+					adjustedWeights["Carbon-Based"] = Math.Max(1, adjustedWeights["Carbon-Based"] - 5);
+				if (adjustedWeights.ContainsKey("Silicon-Based"))
+					adjustedWeights["Silicon-Based"] += 3;
+			}
+			
+			if (Temperature < 200)
+			{
+				if (adjustedWeights.ContainsKey("Hydrogen-Based"))
+					adjustedWeights["Hydrogen-Based"] += 4;
+			}
+			
+			return adjustedWeights;
+		}
+
+		private Dictionary<string, float> CalculateValidSizeMultipliers()
+		{
+			var allMultipliers = BioData.GravitySizeMultiplier();
+			return allMultipliers.Where(kvp => IsValidSizeMultiplierForGravity(kvp.Key))
+								.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value);
+		}
+
+		private bool IsValidSizeMultiplierForGravity(float multiplier)
+		{
+			// This is a simplified check - you might want to make this more sophisticated
+			float maxMultiplier = 1.0f / Gravity;
+			float minMultiplier = Gravity;
+			return multiplier >= minMultiplier && multiplier <= maxMultiplier;
+		}
 	}
 
 	private PlanetSettings currentSettings = new PlanetSettings();
@@ -47,7 +134,7 @@ public partial class SettingsManager : Node
 
 	// Temperature ranges for reference
 	public readonly float MinTemperature = 50.0f;
-	public readonly float MaxTemperature = 150.0f;
+	public readonly float MaxTemperature = 1000.0f;
 
 	// Hydrology ranges (can exceed 100% for gas giants)
 	public readonly float MinHydrology = 0.0f;
@@ -89,7 +176,6 @@ public partial class SettingsManager : Node
 		currentSettings.LandMasses = rand.Next(1, 8);
 		currentSettings.PrimaryChemistry = (PlanetSettings.ChemistryBasis)rand.Next(0, Enum.GetValues(typeof(PlanetSettings.ChemistryBasis)).Length);
 
-		// Randomize additional parameters
 		currentSettings.AtmosphericPressure = (float)(rand.NextDouble() * 5.0);
 		currentSettings.DayLength = (float)(rand.NextDouble() * 100);
 		currentSettings.YearLength = (float)(rand.NextDouble() * 1000 + 100);
@@ -100,44 +186,6 @@ public partial class SettingsManager : Node
 		currentSettings.TectonicActivity = (float)(rand.NextDouble() * 3);
 	}
 
-	// Save settings to file
-	public void SaveSettings(string filepath)
-	{
-		// Implement save functionality
-		// Could use JSON serialization
-	}
-
-	// Load settings from file
-	public void LoadSettings(string filepath)
-	{
-		// Implement load functionality
-	}
-
-	// Validate settings
-	public bool ValidateSettings()
-	{
-		return currentSettings.Temperature >= MinTemperature &&
-			   currentSettings.Temperature <= MaxTemperature &&
-			   currentSettings.Hydrology >= MinHydrology &&
-			   currentSettings.Hydrology <= MaxHydrology &&
-			   currentSettings.Gravity >= MinGravity &&
-			   currentSettings.Gravity <= MaxGravity &&
-			   currentSettings.LandMasses > 0;
-	}
-
-	// Get climate zone based on temperature and other factors
-	public string GetClimateZone()
-	{
-		// Implement climate zone calculation based on temperature, hydrology, and other factors
-		return "Temperate"; // Placeholder
-	}
-
-	// Calculate habitability index
-	public float CalculateHabitabilityIndex()
-	{
-		// Implement habitability calculation based on all parameters
-		return 1.0f; // Placeholder
-	}
 	// Preset settings for different planet types
 	public enum PlanetType
 	{
